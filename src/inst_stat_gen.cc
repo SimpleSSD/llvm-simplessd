@@ -13,7 +13,9 @@
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::InstructionStatisticGenerator"
 
-STATISTIC(FunctionCount, "Counts number of functions handled");
+static llvm::cl::opt<std::string> outputFile(
+    "instatat-output",
+    llvm::cl::desc("Output file path of SimpleSSD instruction statistics"));
 
 namespace SimpleSSD::LLVM {
 
@@ -21,8 +23,6 @@ InstructionStatisticGenerator::InstructionStatisticGenerator()
     : llvm::FunctionPass(ID) {}
 
 bool InstructionStatisticGenerator::runOnFunction(llvm::Function &F) {
-  FunctionCount++;
-
   llvm::errs() << "Hello: ";
   llvm::errs().write_escaped(F.getName()) << '\n';
 
@@ -38,7 +38,6 @@ void InstructionStatisticGenerator::getAnalysisUsage(
 // Don't remove below
 char SimpleSSD::LLVM::InstructionStatisticGenerator::ID = 0;
 static llvm::RegisterPass<SimpleSSD::LLVM::InstructionStatisticGenerator> X(
-    "InstructionStatisticGenerator",
-    "SimpleSSD InstructionStatisticGenerator Function Pass");
+    "inststat", "SimpleSSD InstructionStatisticGenerator Function Pass");
 
 }  // namespace SimpleSSD::LLVM
