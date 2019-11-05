@@ -25,10 +25,7 @@ CTestTestfile.cmake
 # Atom editor specific
 .clang_complete
 
-# Python
-*.pyc
-temp_build/
-
 # Library output
+build/
 *.a
 *.so
