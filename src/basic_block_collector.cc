@@ -22,7 +22,7 @@ using namespace llvm;
 static cl::opt<std::string> outputFile(
     "blockcollector-prefix",
     cl::desc("Output file prefix of SimpleSSD basic block infomation"),
-    cl::value_desc("filename"), cl::init("bbinfo_"));
+    cl::value_desc("filename"), cl::init(""));
 
 namespace SimpleSSD::LLVM {
 
@@ -40,7 +40,7 @@ bool BasicBlockCollector::doInitialization(Module &module) {
 
   // Make filename
   filename += name;
-  filename += ".txt";
+  filename += ".bbinfo.txt";
 
 #if DEBUG_MODE
   outs() << " Output filename: " << filename << "\n";
