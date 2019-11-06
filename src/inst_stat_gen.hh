@@ -15,6 +15,9 @@
 namespace SimpleSSD::LLVM {
 
 class InstructionStatisticGenerator : public llvm::FunctionPass {
+ private:
+  static bool isMarked(llvm::Function &);
+
  public:
   static char ID;
 
