@@ -10,19 +10,26 @@
 #ifndef __SRC_BASIC_BLOCK_COLLECTOR_HH__
 #define __SRC_BASIC_BLOCK_COLLECTOR_HH__
 
+#include <fstream>
+
 #include "llvm/Pass.h"
 #include "src/util.hh"
 
 namespace SimpleSSD::LLVM {
 
 class BasicBlockCollector : public llvm::FunctionPass, Utility {
+ private:
+  bool inited;
+
+  std::ofstream outfile;
+
  public:
   static char ID;
 
   BasicBlockCollector();
+  ~BasicBlockCollector();
 
   bool runOnFunction(llvm::Function &) override;
-  void getAnalysisUsage(llvm::AnalysisUsage &) const override;
 };
 
 }  // namespace SimpleSSD::LLVM
