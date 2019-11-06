@@ -79,6 +79,6 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
 // Don't remove below
 char SimpleSSD::LLVM::BasicBlockCollector::ID = 0;
 static RegisterPass<SimpleSSD::LLVM::BasicBlockCollector> X(
-    "blockcollector", "SimpleSSD basic block collector");
+    "blockcollector", "SimpleSSD basic block collector", false, false);
 
 }  // namespace SimpleSSD::LLVM
