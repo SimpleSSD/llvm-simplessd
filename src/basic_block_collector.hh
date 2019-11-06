@@ -27,9 +27,10 @@ class BasicBlockCollector : public llvm::FunctionPass, Utility {
   static char ID;
 
   BasicBlockCollector();
-  ~BasicBlockCollector();
 
+  bool doInitialization(llvm::Module &) override;
   bool runOnFunction(llvm::Function &) override;
+  bool doFinalization(llvm::Module &) override;
 };
 
 }  // namespace SimpleSSD::LLVM

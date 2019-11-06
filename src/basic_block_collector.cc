@@ -12,6 +12,7 @@
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Support/CommandLine.h"
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::BasicBlockCollector"
@@ -22,8 +23,8 @@ using namespace llvm;
 
 static cl::opt<std::string> outputFile(
     BB_OPTION_OUTFILE,
-    cl::desc("Output file of SimpleSSD basic block infomation"),
-    cl::value_desc("filename"), cl::ValueRequired);
+    cl::desc("Output file prefix of SimpleSSD basic block infomation"),
+    cl::value_desc("filename"), cl::init("bbinfo_"));
 
 namespace SimpleSSD::LLVM {
 
@@ -31,30 +32,33 @@ BasicBlockCollector::BasicBlockCollector() : FunctionPass(ID), inited(false) {
 #if DEBUG_MODE
   outs() << "SimpleSSD instruction statistic generator.\n";
 #endif
-
-  // Validate file
-  if (outputFile.length() == 0) {
-    errs() << " You must specify option '--" << BB_OPTION_OUTFILE
-           << "=<filename>'\n";
-  }
-  else {
-    outfile.open(outputFile);
-
-    if (outfile.is_open()) {
-      inited = true;
-    }
-    else {
-      errs() << " Failed to open file: " << outputFile << "\n";
-    }
-  }
 }
 
-BasicBlockCollector::~BasicBlockCollector() {
-  if (inited) {
-    outfile.close();
+bool BasicBlockCollector::doInitialization(Module &module) {
+  std::string filename(outputFile);
+
+  // Get module name
+  auto name = module.getName().data();
+
+  // Make filename
+  filename += name;
+  filename += ".txt";
+
+#if DEBUG_MODE
+  outs() << " Output filename: " << filename << "\n";
+#endif
+
+  // Validate file
+  outfile.open(filename);
+
+  if (outfile.is_open()) {
+    inited = true;
+  }
+  else {
+    errs() << " Failed to open file: " << filename << "\n";
   }
 
-  inited = false;
+  return false;
 }
 
 bool BasicBlockCollector::runOnFunction(Function &func) {
@@ -119,6 +123,16 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
       }
     }
   }
+
+  return false;
+}
+
+bool BasicBlockCollector::doFinalization(Module &) {
+  if (inited) {
+    outfile.close();
+  }
+
+  inited = false;
 
   return false;
 }
