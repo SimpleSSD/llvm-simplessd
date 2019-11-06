@@ -9,8 +9,10 @@
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::InstructionStatisticGenerator"
 
@@ -44,5 +46,10 @@ void InstructionStatisticGenerator::getAnalysisUsage(
 char SimpleSSD::LLVM::InstructionStatisticGenerator::ID = 0;
 static llvm::RegisterPass<SimpleSSD::LLVM::InstructionStatisticGenerator> X(
     "inststat", "SimpleSSD instruction statistic generator");
+static llvm::RegisterStandardPasses Y(
+    llvm::PassManagerBuilder::EP_EarlyAsPossible,
+    [](const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &p) {
+      p.add(new InstructionStatisticGenerator());
+    });
 
 }  // namespace SimpleSSD::LLVM
