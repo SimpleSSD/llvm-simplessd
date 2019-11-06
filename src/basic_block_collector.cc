@@ -13,7 +13,6 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/raw_ostream.h"
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::BasicBlockCollector"
 
@@ -66,7 +65,11 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
   if (isMarked(func)) {
 #ifdef DEBUG_MODE
     // We found CPU::Function object
-    printFunctionName(func);
+    outs() << "Collecting basic block of ";
+
+    printFunctionName(outs(), func);
+
+    outs() << ".\n";
 #endif
   }
 

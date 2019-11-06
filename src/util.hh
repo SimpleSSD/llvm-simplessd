@@ -11,13 +11,14 @@
 #define __SRC_UTIL_HH__
 
 #include "llvm/Pass.h"
+#include "llvm/Support/raw_ostream.h"
 
 namespace SimpleSSD::LLVM {
 
 class Utility {
  protected:
   static bool isMarked(llvm::Function &);
-  static void printFunctionName(llvm::Function &);
+  static void printFunctionName(llvm::raw_ostream &, llvm::Function &);
 };
 
 }  // namespace SimpleSSD::LLVM

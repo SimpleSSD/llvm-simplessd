@@ -35,19 +35,16 @@ bool Utility::isMarked(Function &func) {
   return false;
 }
 
-void Utility::printFunctionName(Function &func) {
+void Utility::printFunctionName(raw_ostream &os, Function &func) {
   int ret = 0;
   auto mangle = func.getName();
   auto funcname = abi::__cxa_demangle(mangle.data(), nullptr, nullptr, &ret);
 
-  outs() << "Collecting basic block information of:\n";
-  outs() << "  " << mangle;
+  os << mangle;
 
   if (ret == 0) {
-    outs() << " (" << funcname << ")";
+    os << " (" << funcname << ")";
   }
-
-  outs() << "\n";
 
   free(funcname);
 }
