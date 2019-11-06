@@ -1,12 +1,20 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Copyright (C) 2019 CAMELab
+#
+# Author: Donghyun Gouk <kukdh1@camelab.org>
+#
+
 cmake_minimum_required(VERSION 3.10)
 project(llvm_simplessd)
 
+# LLVM Pass debug mode
 option(DEBUG_BUILD "Build LLVM Passes in debug mode." OFF)
 
+# We requires LLVM library
 find_package(LLVM REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
-message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 include_directories(
   ${LLVM_INCLUDE_DIRS}
