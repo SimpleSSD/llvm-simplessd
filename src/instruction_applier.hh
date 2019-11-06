@@ -61,6 +61,19 @@ class InstructionApplier : public llvm::FunctionPass, Utility {
 
   std::ifstream infile;
 
+  struct {
+    llvm::Value *branch;
+    llvm::Value *load;
+    llvm::Value *store;
+    llvm::Value *arith;
+    llvm::Value *fp;
+    llvm::Value *other;
+    llvm::Value *cycles;
+  } pointers;
+
+  void makePointers(llvm::Instruction *, llvm::Value *);
+  void makeAdd(llvm::Instruction *, llvm::Value *, uint64_t);
+
  public:
   static char ID;
 
