@@ -54,7 +54,7 @@ bool Utility::printLineInfo(std::ofstream &os, Instruction &inst) {
   auto &debug = inst.getDebugLoc();
 
   // Check it contains valid DILocation
-  if (debug.get()) {
+  if (debug.get() && debug.getLine() != 0) {
     auto scope = cast<llvm::DIScope>(debug.getScope());
     os << scope->getFilename().data() << ":";
     os << debug.getLine();
