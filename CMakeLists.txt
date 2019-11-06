@@ -25,6 +25,7 @@ if (DEBUG_BUILD)
   add_compile_options(-O0)
 else ()
   add_compile_options(-O2)
+  add_definitions(-DDEBUG_MODE)
 endif ()
 
 set(SRC_INST_STAT_GEN
