@@ -130,8 +130,9 @@ bool InstructionApplier::runOnFunction(Function &func) {
   }
 
   Value *fstat = nullptr;
+  Instruction *next = nullptr;
 
-  if (isMarked(func, &fstat)) {
+  if (isMarked(func, &fstat, &next)) {
 #ifdef DEBUG_MODE
     outs() << "Handling function: ";
 
@@ -142,10 +143,7 @@ bool InstructionApplier::runOnFunction(Function &func) {
 #endif
 
     // Setup pointers of fstat
-    auto &entry = func.getEntryBlock();
-    auto last = entry.getFirstInsertionPt();
-
-    makePointers(&*last, fstat);
+    makePointers(next, fstat);
 
     // Apply instruction stats
     for (auto &block : func) {
