@@ -17,6 +17,12 @@
 
 namespace SimpleSSD::LLVM {
 
+/**
+ * \brief BasicBlock information collector
+ *
+ * This LLVM Pass generates text file contains basicblock infomation (name and
+ * source file:line) of marked function. This Pass removes marker function.
+ */
 class BasicBlockCollector : public llvm::FunctionPass, Utility {
  private:
   bool inited;
