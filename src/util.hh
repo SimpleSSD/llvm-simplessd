@@ -20,7 +20,8 @@ namespace SimpleSSD::LLVM {
 
 class Utility {
  protected:
-  static bool isMarked(llvm::Function &, llvm::Value ** = nullptr);
+  static bool isMarked(llvm::Function &, llvm::Value ** = nullptr,
+                       llvm::Instruction ** = nullptr);
   static void printFunctionName(llvm::raw_ostream &, llvm::Function &);
 
   static bool printLineInfo(std::ofstream &, llvm::Instruction &);
