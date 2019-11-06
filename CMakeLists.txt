@@ -6,7 +6,7 @@
 #
 
 cmake_minimum_required(VERSION 3.10)
-project(llvm_simplessd)
+project(llvm-simplessd)
 
 # LLVM Pass debug mode
 option(DEBUG_BUILD "Build LLVM Passes in debug mode." OFF)
@@ -46,7 +46,7 @@ set(SRC_UTIL
   ./src/util.cc
 )
 
-add_library(llvm_simplessd
+add_library(llvm-simplessd
   MODULE
   ${SRC_BLOCK_COLLECTOR}
   ${SRC_INST_APPLIER}
