@@ -19,7 +19,7 @@ using namespace llvm;
 
 namespace SimpleSSD::LLVM {
 
-bool Utility::isMarked(Function &func) {
+bool Utility::isMarked(Function &func, Value **ppValue) {
   // Check function
   auto &entry = func.getEntryBlock();
 
@@ -28,6 +28,11 @@ bool Utility::isMarked(Function &func) {
       auto callee = call->getCalledFunction();
 
       if (callee && callee->getName().compare(MARK_FUNCION_NAME) == 0) {
+        // Get argument
+        if (ppValue) {
+          *ppValue = call->getArgOperand(0);
+        }
+
         // Remove this instruction
         inst.eraseFromParent();
 
