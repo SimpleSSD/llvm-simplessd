@@ -5,7 +5,7 @@
  * Author: Donghyun Gouk <kukdh1@camelab.org>
  */
 
-#include "src/inst_stat_gen.hh"
+#include "src/basic_block_collector.hh"
 
 #include <cxxabi.h>
 
@@ -17,26 +17,25 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
-#define DEBUG_TYPE "SimpleSSD::LLVM::InstructionStatisticGenerator"
+#define DEBUG_TYPE "SimpleSSD::LLVM::BasicBlockCollector"
 
 using namespace llvm;
 
-static cl::opt<std::string> instOutputfile(
+static cl::opt<std::string> outputfile(
     "inststat-output",
-    cl::desc("Output file of SimpleSSD instruction statistics"),
+    cl::desc("Output file of SimpleSSD basic block infomation"),
     cl::value_desc("filename"), cl::ValueRequired);
 
 namespace SimpleSSD::LLVM {
 
-InstructionStatisticGenerator::InstructionStatisticGenerator()
-    : FunctionPass(ID) {
+BasicBlockCollector::BasicBlockCollector() : FunctionPass(ID) {
 #if DEBUG_MODE
   outs() << "SimpleSSD instruction statistic generator.\n";
-  outs() << " Output file: " << instOutputfile << "\n";
+  outs() << " Output file: " << outputfile << "\n";
 #endif
 }
 
-bool InstructionStatisticGenerator::runOnFunction(Function &func) {
+bool BasicBlockCollector::runOnFunction(Function &func) {
   int ret = 0;
 
   if (isMarked(func)) {
@@ -61,18 +60,18 @@ bool InstructionStatisticGenerator::runOnFunction(Function &func) {
   return false;
 }
 
-void InstructionStatisticGenerator::getAnalysisUsage(AnalysisUsage &AU) const {
+void BasicBlockCollector::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
 }
 
 // Don't remove below
-char SimpleSSD::LLVM::InstructionStatisticGenerator::ID = 0;
-static RegisterPass<SimpleSSD::LLVM::InstructionStatisticGenerator> X(
+char SimpleSSD::LLVM::BasicBlockCollector::ID = 0;
+static RegisterPass<SimpleSSD::LLVM::BasicBlockCollector> X(
     "inststat", "SimpleSSD instruction statistic generator");
 static RegisterStandardPasses Y(PassManagerBuilder::EP_EarlyAsPossible,
                                 [](const PassManagerBuilder &,
                                    legacy::PassManagerBase &p) {
-                                  p.add(new InstructionStatisticGenerator());
+                                  p.add(new BasicBlockCollector());
                                 });
 
 }  // namespace SimpleSSD::LLVM

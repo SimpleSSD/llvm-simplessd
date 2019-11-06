@@ -7,19 +7,19 @@
 
 #pragma once
 
-#ifndef __SRC_INST_STAT_GEN_HH__
-#define __SRC_INST_STAT_GEN_HH__
+#ifndef __SRC_BASIC_BLOCK_COLLECTOR_HH__
+#define __SRC_BASIC_BLOCK_COLLECTOR_HH__
 
 #include "llvm/Pass.h"
 #include "src/util.hh"
 
 namespace SimpleSSD::LLVM {
 
-class InstructionStatisticGenerator : public llvm::FunctionPass, Utility {
+class BasicBlockCollector : public llvm::FunctionPass, Utility {
  public:
   static char ID;
 
-  InstructionStatisticGenerator();
+  BasicBlockCollector();
 
   bool runOnFunction(llvm::Function &) override;
   void getAnalysisUsage(llvm::AnalysisUsage &) const override;
