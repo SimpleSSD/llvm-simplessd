@@ -95,12 +95,14 @@ void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
 
   // Load
   auto load = builder.CreateLoad(target);
+  load->setAlignment(8);
 
   // Add
   auto add = builder.CreateAdd(constant, load);
 
   // Store
-  builder.CreateStore(add, target);
+  auto store = builder.CreateStore(add, target);
+  store->setAlignment(8);
 }
 
 bool InstructionApplier::doInitialization(Module &module) {
