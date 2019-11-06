@@ -71,6 +71,53 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
 
     outs() << ".\n";
 #endif
+
+    // Write function name
+    outfile << "func: " << func.getName().data() << std::endl;
+    outfile << " at: ";
+
+    printLineInfo(outfile, func);
+
+    outfile << std::endl;
+
+    for (auto &block : func) {
+      // Write basic block name
+      outfile << " block: " << block.getName().data() << std::endl;
+
+      // Print first instruction (with debug info)
+      {
+        auto iter = block.begin();
+
+        outfile << "  from: ";
+
+        while (iter != block.end()) {
+          if (printLineInfo(outfile, *iter)) {
+            break;
+          }
+
+          ++iter;
+        }
+
+        outfile << std::endl;
+      }
+
+      // Print last instruction (with debug info)
+      {
+        auto iter = block.rbegin();
+
+        outfile << "  to: ";
+
+        while (iter != block.rend()) {
+          if (printLineInfo(outfile, *iter)) {
+            break;
+          }
+
+          ++iter;
+        }
+
+        outfile << std::endl;
+      }
+    }
   }
 
   return false;

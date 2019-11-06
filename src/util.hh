@@ -10,6 +10,9 @@
 #ifndef __SRC_UTIL_HH__
 #define __SRC_UTIL_HH__
 
+#include <fstream>
+
+#include "llvm/IR/Instructions.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -19,6 +22,9 @@ class Utility {
  protected:
   static bool isMarked(llvm::Function &);
   static void printFunctionName(llvm::raw_ostream &, llvm::Function &);
+
+  static bool printLineInfo(std::ofstream &, llvm::Instruction &);
+  static bool printLineInfo(std::ofstream &, llvm::Function &);
 };
 
 }  // namespace SimpleSSD::LLVM

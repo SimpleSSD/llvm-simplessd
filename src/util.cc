@@ -9,6 +9,7 @@
 
 #include <cxxabi.h>
 
+#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/Instructions.h"
 
 using namespace llvm;
@@ -47,6 +48,34 @@ void Utility::printFunctionName(raw_ostream &os, Function &func) {
   }
 
   free(funcname);
+}
+
+bool Utility::printLineInfo(std::ofstream &os, Instruction &inst) {
+  auto &debug = inst.getDebugLoc();
+
+  // Check it contains valid DILocation
+  if (debug.get()) {
+    auto scope = cast<llvm::DIScope>(debug.getScope());
+    os << scope->getFilename().data() << ":";
+    os << debug.getLine();
+
+    return true;
+  }
+
+  return false;
+}
+
+bool Utility::printLineInfo(std::ofstream &os, Function &func) {
+  auto subprog = func.getSubprogram();
+
+  if (subprog) {
+    os << subprog->getFilename().data() << ":";
+    os << subprog->getLine();
+
+    return true;
+  }
+
+  return false;
 }
 
 }  // namespace SimpleSSD::LLVM
