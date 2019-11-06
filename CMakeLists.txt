@@ -29,7 +29,7 @@ else ()
 endif ()
 
 set(SRC_INST_STAT_GEN
-  ./src/inst_stat_gen.cc
+  ./src/basic_block_collector.cc
 )
 set(SRC_UTIL
   ./src/util.cc
