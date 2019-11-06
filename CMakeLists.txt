@@ -23,16 +23,20 @@ add_compile_options(-fno-rtti)
 
 if (DEBUG_BUILD)
   add_compile_options(-O0)
+  add_definitions(-DDEBUG_MODE)
 else ()
   add_compile_options(-O2)
-  add_definitions(-DDEBUG_MODE)
 endif ()
 
 set(SRC_INST_STAT_GEN
   ./src/inst_stat_gen.cc
 )
+set(SRC_UTIL
+  ./src/util.cc
+)
 
 add_library(llvm_simplessd
   MODULE
   ${SRC_INST_STAT_GEN}
+  ${SRC_UTIL}
 )
