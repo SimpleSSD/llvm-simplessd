@@ -21,15 +21,15 @@ OBJECT=$PREFIX"/"$1".o"
 
 mkdir -p $PREFIX"/"$SOURCE_DIR
 
-# Basic Block collection (Optimization on front-end only)
-clang++ -std=c++17 -DEXCLUDE_CPU -g -O2 -emit-llvm -I. -I../lib/drampower/src -c $TEXT_FLAG -o $LLVM_ASSEMBLY $SOURCE_FILE
-opt -march arm -mcpu cortex-r7 --load ./lib/llvm-simplessd/build/libllvm_simplessd.so --blockcollector $TEXT_FLAG -o $LLVM_ASSEMBLY_OPT $LLVM_ASSEMBLY
-llc -march=arm -mcpu=cortex-r7 -filetype=asm -o $ASSEMBLY $LLVM_ASSEMBLY_OPT
+# Basic Block collection
+clang++ -std=c++17 -DEXCLUDE_CPU -g -emit-llvm -I. -I../lib/drampower/src -c $TEXT_FLAG -o $LLVM_ASSEMBLY $SOURCE_FILE
+opt -march arm -mcpu cortex-r7 --load ./lib/llvm-simplessd/build/libllvm_simplessd.so --blockcollector -O2 $TEXT_FLAG -o $LLVM_ASSEMBLY_OPT $LLVM_ASSEMBLY
+llc -march=arm -mcpu=cortex-r7 -O2 -filetype=asm -o $ASSEMBLY $LLVM_ASSEMBLY_OPT
 
 # Instruction count
 # TODO: $ASSEMBLY + *.bbinfo.txt -> *.instinfo.txt
 
-# Apply instruction statistics (Optimization on all layers)
-clang++ -std=c++17 -g -O2 -emit-llvm -I. -I../lib/drampower/src -c $TEXT_FLAG -o $LLVM_ASSEMBLY $SOURCE_FILE
+# Apply instruction statistics
+clang++ -std=c++17 -g -emit-llvm -I. -I../lib/drampower/src -c $TEXT_FLAG -o $LLVM_ASSEMBLY $SOURCE_FILE
 opt --load ./lib/llvm-simplessd/build/libllvm_simplessd.so --inststat -O2 $TEXT_FLAG -o $LLVM_ASSEMBLY_OPT $LLVM_ASSEMBLY
 llc -O2 -filetype=obj -o $OBJECT $LLVM_ASSEMBLY_OPT
