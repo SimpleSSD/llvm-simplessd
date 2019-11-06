@@ -9,18 +9,23 @@
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IR/Function.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_ostream.h"
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::InstructionStatisticGenerator"
 
-static llvm::cl::opt<std::string> outputFile(
-    "instatat-output",
-    llvm::cl::desc("Output file path of SimpleSSD instruction statistics"));
+static llvm::cl::opt<std::string> instOutputfile(
+    "inststat-output",
+    llvm::cl::desc("Output file of SimpleSSD instruction statistics"),
+    llvm::cl::value_desc("filename"), llvm::cl::ValueRequired);
 
 namespace SimpleSSD::LLVM {
 
 InstructionStatisticGenerator::InstructionStatisticGenerator()
-    : llvm::FunctionPass(ID) {}
+    : llvm::FunctionPass(ID) {
+  llvm::outs() << "SimpleSSD instruction statistic generator.\n";
+  llvm::outs() << " Output file: " << instOutputfile << "\n";
+}
 
 bool InstructionStatisticGenerator::runOnFunction(llvm::Function &F) {
   llvm::errs() << "Hello: ";
@@ -38,6 +43,6 @@ void InstructionStatisticGenerator::getAnalysisUsage(
 // Don't remove below
 char SimpleSSD::LLVM::InstructionStatisticGenerator::ID = 0;
 static llvm::RegisterPass<SimpleSSD::LLVM::InstructionStatisticGenerator> X(
-    "inststat", "SimpleSSD InstructionStatisticGenerator Function Pass");
+    "inststat", "SimpleSSD instruction statistic generator");
 
 }  // namespace SimpleSSD::LLVM
