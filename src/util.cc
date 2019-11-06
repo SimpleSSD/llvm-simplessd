@@ -7,6 +7,8 @@
 
 #include "src/util.hh"
 
+#include <cxxabi.h>
+
 #include "llvm/IR/Instructions.h"
 
 using namespace llvm;
@@ -31,6 +33,23 @@ bool Utility::isMarked(Function &func) {
   }
 
   return false;
+}
+
+void Utility::printFunctionName(Function &func) {
+  int ret = 0;
+  auto mangle = func.getName();
+  auto funcname = abi::__cxa_demangle(mangle.data(), nullptr, nullptr, &ret);
+
+  outs() << "Collecting basic block information of:\n";
+  outs() << "  " << mangle;
+
+  if (ret == 0) {
+    outs() << " (" << funcname << ")";
+  }
+
+  outs() << "\n";
+
+  free(funcname);
 }
 
 }  // namespace SimpleSSD::LLVM

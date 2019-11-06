@@ -7,8 +7,6 @@
 
 #include "src/basic_block_collector.hh"
 
-#include <cxxabi.h>
-
 #include <string>
 
 #include "llvm/ADT/Statistic.h"
@@ -65,24 +63,10 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
     return false;
   }
 
-  int ret = 0;
-
   if (isMarked(func)) {
 #ifdef DEBUG_MODE
     // We found CPU::Function object
-    auto mangle = func.getName();
-    auto funcname = abi::__cxa_demangle(mangle.data(), nullptr, nullptr, &ret);
-
-    outs() << "Collecting basic block information of:\n";
-    outs() << "  " << mangle;
-
-    if (ret == 0) {
-      outs() << " (" << funcname << ")";
-    }
-
-    outs() << "\n";
-
-    free(funcname);
+    printFunctionName(func);
 #endif
   }
 

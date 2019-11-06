@@ -17,6 +17,7 @@ namespace SimpleSSD::LLVM {
 class Utility {
  protected:
   static bool isMarked(llvm::Function &);
+  static void printFunctionName(llvm::Function &);
 };
 
 }  // namespace SimpleSSD::LLVM
