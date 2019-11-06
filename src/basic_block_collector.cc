@@ -17,12 +17,10 @@
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::BasicBlockCollector"
 
-#define BB_OPTION_OUTFILE "block-output"
-
 using namespace llvm;
 
 static cl::opt<std::string> outputFile(
-    BB_OPTION_OUTFILE,
+    "blockcollector-prefix",
     cl::desc("Output file prefix of SimpleSSD basic block infomation"),
     cl::value_desc("filename"), cl::init("bbinfo_"));
 
