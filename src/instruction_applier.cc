@@ -14,6 +14,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/CommandLine.h"
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::InstructionApplier"
@@ -159,6 +160,11 @@ bool InstructionApplier::runOnFunction(Function &func) {
       makeAdd(&last, pointers.floating, 1);
       makeAdd(&last, pointers.other, 1);
       makeAdd(&last, pointers.cycles, 7);
+    }
+
+    // Verify function
+    if (verifyFunction(func, &errs())) {
+      func.dump();
     }
 
     return true;
