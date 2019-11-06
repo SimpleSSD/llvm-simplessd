@@ -36,8 +36,11 @@ else ()
   add_compile_options(-O2)
 endif ()
 
-set(SRC_INST_STAT_GEN
+set(SRC_BLOCK_COLLECTOR
   ./src/basic_block_collector.cc
+)
+set(SRC_INST_APPLIER
+  ./src/instruction_applier.cc
 )
 set(SRC_UTIL
   ./src/util.cc
@@ -45,6 +48,7 @@ set(SRC_UTIL
 
 add_library(llvm_simplessd
   MODULE
-  ${SRC_INST_STAT_GEN}
+  ${SRC_BLOCK_COLLECTOR}
+  ${SRC_INST_APPLIER}
   ${SRC_UTIL}
 )
