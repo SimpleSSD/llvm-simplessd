@@ -16,40 +16,40 @@
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::InstructionStatisticGenerator"
 
-static llvm::cl::opt<std::string> instOutputfile(
+using namespace llvm;
+
+static cl::opt<std::string> instOutputfile(
     "inststat-output",
-    llvm::cl::desc("Output file of SimpleSSD instruction statistics"),
-    llvm::cl::value_desc("filename"), llvm::cl::ValueRequired);
+    cl::desc("Output file of SimpleSSD instruction statistics"),
+    cl::value_desc("filename"), cl::ValueRequired);
 
 namespace SimpleSSD::LLVM {
 
 InstructionStatisticGenerator::InstructionStatisticGenerator()
-    : llvm::FunctionPass(ID) {
-  llvm::outs() << "SimpleSSD instruction statistic generator.\n";
-  llvm::outs() << " Output file: " << instOutputfile << "\n";
+    : FunctionPass(ID) {
+  outs() << "SimpleSSD instruction statistic generator.\n";
+  outs() << " Output file: " << instOutputfile << "\n";
 }
 
-bool InstructionStatisticGenerator::runOnFunction(llvm::Function &F) {
-  llvm::errs() << "Hello: ";
-  llvm::errs().write_escaped(F.getName()) << '\n';
+bool InstructionStatisticGenerator::runOnFunction(Function &F) {
+  errs() << "Hello: ";
+  errs().write_escaped(F.getName()) << '\n';
 
   return false;
 }
 
-// We don't modify the program, so we preserve all analyses.
-void InstructionStatisticGenerator::getAnalysisUsage(
-    llvm::AnalysisUsage &AU) const {
+void InstructionStatisticGenerator::getAnalysisUsage(AnalysisUsage &AU) const {
   AU.setPreservesAll();
 }
 
 // Don't remove below
 char SimpleSSD::LLVM::InstructionStatisticGenerator::ID = 0;
-static llvm::RegisterPass<SimpleSSD::LLVM::InstructionStatisticGenerator> X(
+static RegisterPass<SimpleSSD::LLVM::InstructionStatisticGenerator> X(
     "inststat", "SimpleSSD instruction statistic generator");
-static llvm::RegisterStandardPasses Y(
-    llvm::PassManagerBuilder::EP_EarlyAsPossible,
-    [](const llvm::PassManagerBuilder &, llvm::legacy::PassManagerBase &p) {
-      p.add(new InstructionStatisticGenerator());
-    });
+static RegisterStandardPasses Y(PassManagerBuilder::EP_EarlyAsPossible,
+                                [](const PassManagerBuilder &,
+                                   legacy::PassManagerBase &p) {
+                                  p.add(new InstructionStatisticGenerator());
+                                });
 
 }  // namespace SimpleSSD::LLVM
