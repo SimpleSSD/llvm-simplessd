@@ -65,17 +65,17 @@ void InstructionApplier::makePointers(Instruction *next, Value *fstat) {
   pointers.branch =
       builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_branch");
   pointers.load =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_load");
+      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList1, 2), "fstat_load");
   pointers.store =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_store");
+      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList2, 2), "fstat_store");
   pointers.arith =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_arith");
+      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList3, 2), "fstat_arith");
   pointers.fp =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_fp");
+      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList4, 2), "fstat_fp");
   pointers.other =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_other");
+      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList5, 2), "fstat_other");
   pointers.cycles =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_cycles");
+      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList6, 2), "fstat_cycles");
 }
 
 void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
@@ -100,7 +100,7 @@ void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
   auto add = builder.CreateAdd(constant, load);
 
   // Store
-  auto store = builder.CreateStore(add, target);
+  builder.CreateStore(add, target);
 }
 
 bool InstructionApplier::doInitialization(Module &module) {
