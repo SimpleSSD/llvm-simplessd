@@ -86,6 +86,9 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
       // Write basic block name
       outfile << " block: " << block.getName().data() << std::endl;
 
+      // Write IR count
+      outfile<< "  size: " << block.size() << std::endl;
+
       // Print first instruction (with debug info)
       {
         auto iter = block.begin();
