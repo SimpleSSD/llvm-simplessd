@@ -40,17 +40,14 @@ void InstructionApplier::makePointers(Instruction *next, Value *fstat) {
   // Create builder
   IRBuilder<> builder(next);
 
-  // Context
-  auto &ctx = builder.getContext();
-
   // %idx
-  auto idx0 = ConstantInt::get(ctx, APInt(32, 0));  // Constant uint32_t 0
-  auto idx1 = ConstantInt::get(ctx, APInt(32, 1));  // Constant uint32_t 1
-  auto idx2 = ConstantInt::get(ctx, APInt(32, 2));  // Constant uint32_t 2
-  auto idx3 = ConstantInt::get(ctx, APInt(32, 3));  // Constant uint32_t 3
-  auto idx4 = ConstantInt::get(ctx, APInt(32, 4));  // Constant uint32_t 4
-  auto idx5 = ConstantInt::get(ctx, APInt(32, 5));  // Constant uint32_t 5
-  auto idx6 = ConstantInt::get(ctx, APInt(32, 6));  // Constant uint32_t 6
+  auto idx0 = builder.getInt32(0);
+  auto idx1 = builder.getInt32(1);
+  auto idx2 = builder.getInt32(2);
+  auto idx3 = builder.getInt32(3);
+  auto idx4 = builder.getInt32(4);
+  auto idx5 = builder.getInt32(5);
+  auto idx6 = builder.getInt32(6);
 
   // IdxList
   Value *idxList0[2] = {idx0, idx0};
@@ -87,18 +84,12 @@ void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
   // Create builder
   IRBuilder<> builder(next);
 
-  // Context
-  auto &ctx = builder.getContext();
-
-  // Value to add
-  auto constant = ConstantInt::get(ctx, APInt(64, value));
-
   // Load
   auto load = builder.CreateLoad(target);
   load->setAlignment(8);
 
   // Add
-  auto add = builder.CreateAdd(constant, load);
+  auto add = builder.CreateAdd(builder.getInt64(value), load);
 
   // Store
   auto store = builder.CreateStore(add, target);
