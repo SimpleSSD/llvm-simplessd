@@ -8,6 +8,6 @@ ASSEMBLY=$PREFIX"/"$1".S"
 
 mkdir -p $PREFIX"/"$SOURCE_DIR
 
-clang++ -std=c++17 -DEXCLUDE_CPU -g -S -emit-llvm -I. -I../lib/drampower/src -c $SOURCE_FILE -o $LLVM_ASSEMBLY
-opt --load ./lib/llvm-simplessd/build/libllvm_simplessd.so --blockcollector -O2 -S -march arm -mcpu cortex-r7 -o $LLVM_ASSEMBLY_OPT $LLVM_ASSEMBLY
+clang++ -std=c++17 -DEXCLUDE_CPU -g -O2 -emit-llvm -I. -I../lib/drampower/src -c -o $LLVM_ASSEMBLY $SOURCE_FILE
+opt -march arm -mcpu cortex-r7 -O2 --load ./lib/llvm-simplessd/build/libllvm_simplessd.so --blockcollector -S -o $LLVM_ASSEMBLY_OPT $LLVM_ASSEMBLY
 llc -march=arm -mcpu=cortex-r7 -filetype=asm -o $ASSEMBLY $LLVM_ASSEMBLY_OPT
