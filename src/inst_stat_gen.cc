@@ -19,9 +19,6 @@
 
 #define DEBUG_TYPE "SimpleSSD::LLVM::InstructionStatisticGenerator"
 
-#define FUNCTION_TYPE_NAME "class.SimpleSSD::CPU::Function"
-#define MARK_FUNCION_NAME "_ZN9SimpleSSD3CPU12markFunctionERNS0_8FunctionE"
-
 using namespace llvm;
 
 static cl::opt<std::string> instOutputfile(
@@ -37,23 +34,6 @@ InstructionStatisticGenerator::InstructionStatisticGenerator()
   outs() << "SimpleSSD instruction statistic generator.\n";
   outs() << " Output file: " << instOutputfile << "\n";
 #endif
-}
-
-bool InstructionStatisticGenerator::isMarked(llvm::Function &func) {
-  // Check function
-  auto &entry = func.getEntryBlock();
-
-  for (auto &inst : entry) {
-    if (auto call = dyn_cast<CallInst>(&inst)) {
-      auto callee = call->getCalledFunction();
-
-      if (callee && callee->getName().compare(MARK_FUNCION_NAME) == 0) {
-        return true;
-      }
-    }
-  }
-
-  return false;
 }
 
 bool InstructionStatisticGenerator::runOnFunction(Function &func) {

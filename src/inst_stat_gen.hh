@@ -11,13 +11,11 @@
 #define __SRC_INST_STAT_GEN_HH__
 
 #include "llvm/Pass.h"
+#include "src/util.hh"
 
 namespace SimpleSSD::LLVM {
 
-class InstructionStatisticGenerator : public llvm::FunctionPass {
- private:
-  static bool isMarked(llvm::Function &);
-
+class InstructionStatisticGenerator : public llvm::FunctionPass, Utility {
  public:
   static char ID;
 
