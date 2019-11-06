@@ -139,11 +139,11 @@ bool InstructionApplier::runOnFunction(Function &func) {
 
   if (isMarked(func, &fstat)) {
 #ifdef DEBUG_MODE
-    outs() << "Handling function ";
+    outs() << "Handling function: ";
 
     printFunctionName(outs(), func);
 
-    outs() << ", storing statistics to value";
+    outs() << ", storing statistics to value: ";
     outs() << fstat->getName() << ".\n";
 #endif
 
