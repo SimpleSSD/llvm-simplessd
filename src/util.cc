@@ -28,6 +28,9 @@ bool Utility::isMarked(Function &func) {
       auto callee = call->getCalledFunction();
 
       if (callee && callee->getName().compare(MARK_FUNCION_NAME) == 0) {
+        // Remove this instruction
+        inst.eraseFromParent();
+
         return true;
       }
     }

@@ -123,6 +123,9 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
         outfile << std::endl;
       }
     }
+
+    // We removed markFunction
+    return true;
   }
 
   return false;
@@ -141,6 +144,6 @@ bool BasicBlockCollector::doFinalization(Module &) {
 // Don't remove below
 char SimpleSSD::LLVM::BasicBlockCollector::ID = 0;
 static RegisterPass<SimpleSSD::LLVM::BasicBlockCollector> X(
-    "blockcollector", "SimpleSSD basic block collector", false, false);
+    "blockcollector", "SimpleSSD basic block collector", true, false);
 
 }  // namespace SimpleSSD::LLVM
