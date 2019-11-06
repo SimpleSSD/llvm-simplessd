@@ -27,7 +27,9 @@ opt -march arm -mcpu cortex-r7 --load ./lib/llvm-simplessd/build/libllvm_simples
 llc -march=arm -mcpu=cortex-r7 -O2 -filetype=asm -o $ASSEMBLY $LLVM_ASSEMBLY_OPT
 
 # Instruction count
-# TODO: $ASSEMBLY + *.bbinfo.txt -> *.instinfo.txt
+# TODO: $ASSEMBLY + *.bbinfo.txt -> *.inststat.txt
+STATFILE=$LLVM_ASSEMBLY".inststat.txt"
+touch $STATFILE
 
 # Apply instruction statistics
 clang++ -std=c++17 -g -emit-llvm -I. -I../lib/drampower/src -c $TEXT_FLAG -o $LLVM_ASSEMBLY $SOURCE_FILE
