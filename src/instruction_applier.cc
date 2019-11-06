@@ -62,20 +62,20 @@ void InstructionApplier::makePointers(Instruction *next, Value *fstat) {
   Value *idxList6[2] = {idx0, idx6};
 
   // Add instructions
-  pointers.branch =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList0, 2), "fstat_branch");
-  pointers.load =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList1, 2), "fstat_load");
-  pointers.store =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList2, 2), "fstat_store");
-  pointers.arith =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList3, 2), "fstat_arith");
-  pointers.fp =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList4, 2), "fstat_fp");
-  pointers.other =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList5, 2), "fstat_other");
-  pointers.cycles =
-      builder.CreateGEP(fstat, ArrayRef<Value *>(idxList6, 2), "fstat_cycles");
+  pointers.branch = builder.CreateInBoundsGEP(
+      fstat, ArrayRef<Value *>(idxList0, 2), "fstat_branch");
+  pointers.load = builder.CreateInBoundsGEP(
+      fstat, ArrayRef<Value *>(idxList1, 2), "fstat_load");
+  pointers.store = builder.CreateInBoundsGEP(
+      fstat, ArrayRef<Value *>(idxList2, 2), "fstat_store");
+  pointers.arithmetic = builder.CreateInBoundsGEP(
+      fstat, ArrayRef<Value *>(idxList3, 2), "fstat_arithmetic");
+  pointers.floating = builder.CreateInBoundsGEP(
+      fstat, ArrayRef<Value *>(idxList4, 2), "fstat_floating");
+  pointers.other = builder.CreateInBoundsGEP(
+      fstat, ArrayRef<Value *>(idxList5, 2), "fstat_other");
+  pointers.cycles = builder.CreateInBoundsGEP(
+      fstat, ArrayRef<Value *>(idxList6, 2), "fstat_cycles");
 }
 
 void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
@@ -164,8 +164,8 @@ bool InstructionApplier::runOnFunction(Function &func) {
       makeAdd(&last, pointers.branch, 1);
       makeAdd(&last, pointers.load, 1);
       makeAdd(&last, pointers.store, 1);
-      makeAdd(&last, pointers.arith, 1);
-      makeAdd(&last, pointers.fp, 1);
+      makeAdd(&last, pointers.arithmetic, 1);
+      makeAdd(&last, pointers.floating, 1);
       makeAdd(&last, pointers.other, 1);
       makeAdd(&last, pointers.cycles, 7);
     }

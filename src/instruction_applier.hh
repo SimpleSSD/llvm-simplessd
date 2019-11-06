@@ -65,8 +65,8 @@ class InstructionApplier : public llvm::FunctionPass, Utility {
     llvm::Value *branch;
     llvm::Value *load;
     llvm::Value *store;
-    llvm::Value *arith;
-    llvm::Value *fp;
+    llvm::Value *arithmetic;
+    llvm::Value *floating;
     llvm::Value *other;
     llvm::Value *cycles;
   } pointers;
