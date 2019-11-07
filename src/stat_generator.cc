@@ -119,6 +119,8 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
     BLOCK_FROM,  // -> BLOCK_TO
     BLOCK_TO,    // -> IDLE/FUNC_AT
   } state = IDLE;
+  Function *current = nullptr;
+  BasicBlock *bb = nullptr;
 
   auto parseFile = [](std::string &line, std::string &file,
                       size_t from) -> uint32_t {
@@ -135,9 +137,6 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
   };
 
   while (!file.eof()) {
-    Function *current = nullptr;
-    BasicBlock *bb = nullptr;
-
     // Read one line
     std::getline(file, line);
 
