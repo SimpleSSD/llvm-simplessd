@@ -13,6 +13,8 @@
 #include "src/def.hh"
 
 struct BasicBlock {
+  bool skip;
+
   std::string name;
   std::string from;
   std::string to;
@@ -31,7 +33,8 @@ struct BasicBlock {
   uint64_t cycles;
 
   BasicBlock()
-      : begin(0),
+      : skip(false),
+        begin(0),
         end(0),
         branch(0),
         load(0),
@@ -200,6 +203,37 @@ bool generateStatistic(std::vector<Function> &list, std::string filename) {
 }
 
 bool saveStatistic(std::vector<Function> &list, std::string filename) {
+  std::ofstream file(filename);
+
+  if (!file.is_open()) {
+#ifdef DEBUG_MODE
+    std::cerr << "Failed to open file " << filename << std::endl;
+#endif
+    return false;
+  }
+
+  for (auto &func : list) {
+    file << "func: " << func.name << std::endl;
+
+    for (auto &block : func.blocks) {
+      if (block.skip) {
+        continue;
+      }
+
+      file << " block: " << block.name << std::endl;
+      file << " from: " << block.from << ":" << block.begin << std::endl;
+      file << " to: " << block.to << ":" << block.end << std::endl;
+      file << " stat: ";
+      file << block.branch << ", ";
+      file << block.load << ", ";
+      file << block.store << ", ";
+      file << block.arithmetic << ", ";
+      file << block.floatingPoint << ", ";
+      file << block.otherInsts << ", ";
+      file << block.cycles << std::endl;
+    }
+  }
+
   return true;
 }
 
