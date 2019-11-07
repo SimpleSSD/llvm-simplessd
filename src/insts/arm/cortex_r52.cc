@@ -7,6 +7,8 @@
 
 #include "src/insts/arm/cortex_r52.hh"
 
+#include <iostream>
+
 namespace Instruction::ARM {
 
 RuleList rule_r52 = {
@@ -292,6 +294,12 @@ Type CortexR52::getStatistic(std::string &op, uint64_t &cycles) {
       }
     }
   }
+
+#if DEBUG_MODE
+  if (op.front() == 'f') {
+    std::cerr << "Floating point instruction: " << op << std::endl;
+  }
+#endif
 
   return Type::Ignore;
 }
