@@ -53,6 +53,47 @@ struct Function {
   std::vector<BasicBlock> blocks;
 };
 
+namespace Assembly {
+
+struct BasicBlock {
+  uint32_t id;
+  std::string name;
+
+  uint32_t begin;
+  uint32_t end;
+
+  uint64_t branch;
+  uint64_t load;
+  uint64_t store;
+  uint64_t arithmetic;
+  uint64_t floatingPoint;
+  uint64_t otherInsts;
+
+  uint64_t cycles;
+
+  BasicBlock()
+      : id(0),
+        begin(0),
+        end(0),
+        branch(0),
+        load(0),
+        store(0),
+        arithmetic(0),
+        floatingPoint(0),
+        otherInsts(0),
+        cycles(0) {}
+};
+
+struct Function {
+  std::string name;
+  std::string file;
+  uint32_t at;
+
+  std::vector<BasicBlock> blocks;
+};
+
+}  // namespace Assembly
+
 bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
   std::ifstream file(filename);
 
@@ -198,7 +239,14 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
   return true;
 }
 
-bool generateStatistic(std::vector<Function> &list, std::string filename) {
+bool parseAssembly(std::vector<Assembly::Function> &list,
+                   std::string filename) {
+  return true;
+}
+
+bool generateStatistic(std::vector<Function> &bbinfo,
+                       std::vector<Assembly::Function> &asmbb) {
+
   return true;
 }
 
@@ -265,12 +313,17 @@ int main(int argc, char *argv[]) {
   }
 
   std::vector<Function> funclist;
+  std::vector<Assembly::Function> asmfunclist;
 
   if (!loadBasicBlockInfo(funclist, bbinfo)) {
     return 1;
   }
 
-  if (!generateStatistic(funclist, asmfile)) {
+  if (!parseAssembly(asmfunclist, asmfile)) {
+    return 1;
+  }
+
+  if (!generateStatistic(funclist, asmfunclist)) {
     return 1;
   }
 
