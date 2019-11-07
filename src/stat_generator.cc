@@ -289,27 +289,36 @@ int main(int argc, char *argv[]) {
   std::string bbinfo;
   std::string asmfile;
   std::string inststat;
+  std::string cputarget;
 
-  if (argc == 2) {
+  switch (argc) {
+    case 3:
 #ifdef DEBUG_MODE
-    std::cout << "From module name: " << argv[1] << std::endl;
+      std::cout << "Use instruction from CPU: " << argv[2] << std::endl;
 #endif
 
-    bbinfo = argv[1];
-    bbinfo += BBC_FILE_POSTFIX;
-
-    asmfile = argv[1];
-    asmfile += ASM_FILE_POSTFIX;
-
-    inststat = argv[1];
-    inststat += IA_FILE_POSTFIX;
-  }
-  else {
+      cputarget = argv[2];
+      /* fallthrough */
+    case 2:
 #ifdef DEBUG_MODE
-    std::cerr << "Invalid number of arguments" << std::endl;
-    std::cerr << " Usage: " << argv[0] << " <module file name>" << std::endl;
+      std::cout << "From module name: " << argv[1] << std::endl;
 #endif
-    return 1;
+
+      bbinfo = argv[1];
+      bbinfo += BBC_FILE_POSTFIX;
+
+      asmfile = argv[1];
+      asmfile += ASM_FILE_POSTFIX;
+
+      inststat = argv[1];
+      inststat += IA_FILE_POSTFIX;
+      break;
+    default:
+#ifdef DEBUG_MODE
+      std::cerr << "Invalid number of arguments" << std::endl;
+      std::cerr << " Usage: " << argv[0] << " <module file name>" << std::endl;
+#endif
+      return 1;
   }
 
   std::vector<Function> funclist;
