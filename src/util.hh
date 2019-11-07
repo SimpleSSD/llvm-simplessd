@@ -15,6 +15,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/raw_ostream.h"
+#include "src/def.hh"
 
 namespace SimpleSSD::LLVM {
 

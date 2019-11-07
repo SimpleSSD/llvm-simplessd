@@ -105,7 +105,7 @@ bool InstructionApplier::doInitialization(Module &module) {
 
   // Make filename
   filename += name;
-  filename += ".inststat.txt";
+  filename += IA_FILE_POSTFIX;
 
 #if DEBUG_MODE
   outs() << " Input filename: " << filename << "\n";

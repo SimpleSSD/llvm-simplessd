@@ -40,7 +40,7 @@ bool BasicBlockCollector::doInitialization(Module &module) {
 
   // Make filename
   filename += name;
-  filename += ".bbinfo.txt";
+  filename += BBC_FILE_POSTFIX;
 
 #if DEBUG_MODE
   outs() << " Output filename: " << filename << "\n";
