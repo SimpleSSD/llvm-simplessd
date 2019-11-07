@@ -10,5 +10,6 @@
 
 #define BBC_FILE_POSTFIX ".bbinfo.txt"
 #define IA_FILE_POSTFIX ".inststat.txt"
+#define ASM_FILE_POSTFIX ".S"
 
 #endif
