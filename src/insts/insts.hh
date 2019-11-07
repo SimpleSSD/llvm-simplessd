@@ -42,7 +42,8 @@ using RuleList = std::unordered_multimap<char, Rule>;
 
 class Base {
  public:
-  virtual Type getStatistic(std::string &, uint64_t &);
+  virtual Type getStatistic(std::string &, uint64_t &) = 0;
+  virtual const char *getName() = 0;
 };
 
 };  // namespace Instruction

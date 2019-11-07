@@ -23,6 +23,7 @@ namespace Instruction::ARM {
 class CortexA57 : public Base {
  public:
   Type getStatistic(std::string &, uint64_t &) override;
+  const char *getName() override { return "cortex-a57"; }
 };
 
 }  // namespace Instruction::ARM
