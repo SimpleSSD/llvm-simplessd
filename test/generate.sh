@@ -23,8 +23,8 @@ mkdir -p $PREFIX"/"$SOURCE_DIR
 
 # Basic Block collection
 clang++ -std=c++17 -DEXCLUDE_CPU -g -emit-llvm -I. -I../lib/drampower/src -c $TEXT_FLAG -o $LLVM_ASSEMBLY $SOURCE_FILE
-opt -march arm -mcpu cortex-r7 --load ./lib/llvm-simplessd/build/libllvm-simplessd.so --blockcollector -O2 $TEXT_FLAG -o $LLVM_ASSEMBLY_OPT $LLVM_ASSEMBLY
-llc -march=arm -mcpu=cortex-r7 -O2 -filetype=asm -o $ASSEMBLY $LLVM_ASSEMBLY_OPT
+opt --load ./lib/llvm-simplessd/build/libllvm-simplessd.so --blockcollector -O2 $TEXT_FLAG -o $LLVM_ASSEMBLY_OPT $LLVM_ASSEMBLY
+llc -O2 -filetype=asm -o $ASSEMBLY $LLVM_ASSEMBLY_OPT
 
 # Instruction count
 # TODO: $ASSEMBLY + *.bbinfo.txt -> *.inststat.txt
