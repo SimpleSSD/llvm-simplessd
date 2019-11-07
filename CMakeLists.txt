@@ -42,13 +42,24 @@ set(SRC_BLOCK_COLLECTOR
 set(SRC_INST_APPLIER
   ./src/instruction_applier.cc
 )
+set(SRC_STAT_GENERATOR
+  ./src/stat_generator.cc
+)
 set(SRC_UTIL
   ./src/util.cc
 )
 
+# LLVM Pass target
 add_library(llvm-simplessd
   MODULE
   ${SRC_BLOCK_COLLECTOR}
   ${SRC_INST_APPLIER}
   ${SRC_UTIL}
 )
+
+# Statistic collector target
+add_executable(inststat-generator
+  ${SRC_STAT_GENERATOR}
+)
+
+add_dependencies(llvm-simplessd inststat-generator)
