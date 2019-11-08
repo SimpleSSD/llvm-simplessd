@@ -46,6 +46,8 @@ class Base {
   virtual const char *getName() = 0;
 };
 
+Base *initialize(std::string &);
+
 };  // namespace Instruction
 
 #endif
