@@ -140,7 +140,7 @@ void InstructionApplier::parseStatFile() {
         state = IDLE;
       }
       else if (line.compare(0, 8, " block: ") == 0) {
-        state = FUNC;
+        state = FUNC_AT;
       }
       else if (line.length() == 0) {
         break;
