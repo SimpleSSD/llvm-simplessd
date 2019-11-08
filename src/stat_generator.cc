@@ -288,7 +288,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         }
         else {
           // Ignore file name if different with function file
-          if (current->name.compare(name.str()) == 0) {
+          if (current->file.compare(name.str()) == 0) {
             // Store min value to begin
             if (bb->begin > row) {
               bb->begin = row;
