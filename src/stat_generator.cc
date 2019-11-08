@@ -404,9 +404,6 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
       if (std::regex_search(line, match, regex_func)) {
         auto &name = match[1];
 
-#ifdef DEBUG_MODE
-        std::cout << "Function: " << name << std::endl;
-#endif
         if (isa == nullptr) {
           std::string cpu("amd64-generic");
 
@@ -441,7 +438,7 @@ bool generateStatistic(std::vector<Function> &bbinfo,
       // Find function
       if (irfunc.name.compare(asmfunc.name) == 0 && irfunc.at == asmfunc.at) {
 #ifdef DEBUG_MODE
-        std::cout << "Function " << irfunc.name << " found" << std::endl;
+        std::cout << "Function: " << irfunc.name << std::endl;
 #endif
         // Matching basicblocks
         for (auto &irbb : irfunc.blocks) {
