@@ -407,6 +407,11 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
 #ifdef DEBUG_MODE
         std::cout << "Function: " << name << std::endl;
 #endif
+        if (isa == nullptr) {
+          std::string cpu("amd64-generic");
+
+          isa = Instruction::initialize(cpu);
+        }
 
         // Append to list
         list.emplace_back(Assembly::Function());
