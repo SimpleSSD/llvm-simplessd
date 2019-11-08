@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "llvm/Pass.h"
