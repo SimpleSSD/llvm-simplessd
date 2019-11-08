@@ -183,6 +183,11 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
 
     switch (state) {
       case IDLE:
+        // Empty file
+        if (line.length() == 0) {
+          break;
+        }
+
         // Expect 'func: <Function name>'
         if (line.compare(0, 6, "func: ") != 0) {
           return false;
