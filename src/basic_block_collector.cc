@@ -74,6 +74,9 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
     outs() << ".\n";
 #endif
 
+    std::string file;
+    uint32_t line;
+
     // Write function name
     outfile << "func: " << func.getName().data() << std::endl;
     outfile << " at: ";
@@ -87,41 +90,17 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
       outfile << " block: " << block.getName().data() << std::endl;
 
       // Write IR count
-      outfile<< "  size: " << block.size() << std::endl;
+      outfile << "  size: " << block.size() << std::endl;
 
       // Print first instruction (with debug info)
-      {
-        auto iter = block.begin();
+      line = getFirstLine(block, file);
 
-        outfile << "  from: ";
-
-        while (iter != block.end()) {
-          if (printLineInfo(outfile, *iter)) {
-            break;
-          }
-
-          ++iter;
-        }
-
-        outfile << std::endl;
-      }
+      outfile << "  from: " << file << ":" << line << std::endl;
 
       // Print last instruction (with debug info)
-      {
-        auto iter = block.rbegin();
+      line = getLastLine(block, file);
 
-        outfile << "  to: ";
-
-        while (iter != block.rend()) {
-          if (printLineInfo(outfile, *iter)) {
-            break;
-          }
-
-          ++iter;
-        }
-
-        outfile << std::endl;
-      }
+      outfile << "  to: " << file << ":" << line << std::endl;
     }
 
     // We removed markFunction
