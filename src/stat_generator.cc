@@ -7,9 +7,11 @@
 
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <string>
 #include <vector>
 
+#include "insts/insts.hh"
 #include "src/def.hh"
 
 struct BasicBlock {
@@ -73,7 +75,7 @@ struct BasicBlock {
 
   BasicBlock()
       : id(0),
-        begin(0),
+        begin(std::numeric_limits<uint32_t>::max()),
         end(0),
         branch(0),
         load(0),
@@ -459,11 +461,13 @@ int main(int argc, char *argv[]) {
   std::vector<Function> funclist;
   std::vector<Assembly::Function> asmfunclist;
 
+  Instruction::Base *isa = Instruction::initialize(cputarget);
+
   if (!loadBasicBlockInfo(funclist, bbinfo)) {
     return 1;
   }
 
-  if (!parseAssembly(asmfunclist, asmfile)) {
+  if (!parseAssembly(asmfunclist, asmfile, isa)) {
     return 1;
   }
 
