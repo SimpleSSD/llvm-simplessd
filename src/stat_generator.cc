@@ -288,7 +288,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
                             std::regex::ECMAScript | std::regex::icase);
   std::regex regex_inst("\\s+([^\\s\\.#@][\\w\\d\\.]*)\\s+.+");
   std::regex regex_func("[#@] -- Begin function (.+)");
-  std::regex regex_end("@ -- End function");
+  std::regex regex_end("[#@] -- End function");
   std::regex regex_cpu("\\s+\\.cpu\\s+(.+)",
                        std::regex::ECMAScript | std::regex::icase);
 
@@ -307,8 +307,8 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
           current->at = row;
         }
         else {
-          // Ignore file name if different with function file
-          if (current->file.compare(name.str()) == 0) {
+          // Ignore file name if different with function file and line 0
+          if (current->file.compare(name.str()) == 0 && row != 0) {
             // Store min value to begin
             if (bb->begin > row) {
               bb->begin = row;
