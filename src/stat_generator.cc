@@ -511,9 +511,9 @@ bool saveStatistic(std::vector<Function> &list, std::string filename) {
       }
 
       file << " block: " << block.name << std::endl;
-      file << " from: " << block.from << ":" << block.begin << std::endl;
-      file << " to: " << block.to << ":" << block.end << std::endl;
-      file << " stat: ";
+      file << "  from: " << block.from << ":" << block.begin << std::endl;
+      file << "  to: " << block.to << ":" << block.end << std::endl;
+      file << "  stat: ";
       file << block.branch << ", ";
       file << block.load << ", ";
       file << block.store << ", ";
