@@ -260,12 +260,17 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   Assembly::BasicBlock *bb = nullptr;
 
   std::regex regex_loc(
-      "\\s+\\.loc\\s+\\d+\\s+\\d+\\s+\\d+\\s+[#@] (.+):(\\d+):\\d+");
-  std::regex regex_bb("[#@] %bb\\.(\\d+):\\s+[#@] %(.+)");
-  std::regex regex_inst("\\s+([^\\.][\\w\\d\\.]*)\\s+.+");
+      "\\s+\\.loc\\s+\\d+\\s+\\d+\\s+\\d+.+[#@] (.+):(\\d+):\\d+",
+      std::regex::ECMAScript | std::regex::icase);
+  std::regex regex_bb("[#@] %bb\\.(\\d+):\\s+[#@] %(.+)",
+                      std::regex::ECMAScript | std::regex::icase);
+  std::regex regex_label_bb("\\.LBB(\\d+)(_\\d+)*:\\s+[#@] %(.+)",
+                            std::regex::ECMAScript | std::regex::icase);
+  std::regex regex_inst("\\s+([^\\s\\.#@][\\w\\d\\.]*)\\s+.+");
   std::regex regex_func("[#@] -- Begin function (.+)");
   std::regex regex_end("@ -- End function");
-  std::regex regex_cpu("\\s+\\.cpu\\s+(.+)");
+  std::regex regex_cpu("\\s+\\.cpu\\s+(.+)",
+                       std::regex::ECMAScript | std::regex::icase);
 
   std::smatch match;
 
@@ -282,7 +287,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
 #endif
 
         if (bb == nullptr) {
-          current->name = std::move(name);
+          current->file = std::move(name);
           current->at = row;
         }
         else {
@@ -303,6 +308,22 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
       else if (std::regex_match(line, match, regex_bb)) {
         uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
         auto &name = match[2];
+
+#ifdef DEBUG_MODE
+        std::cout << "BasicBlock: " << name << " (" << id << ")" << std::endl;
+#endif
+
+        // Append to list
+        current->blocks.emplace_back(Assembly::BasicBlock());
+        bb = &current->blocks.back();
+
+        // Store name and id
+        bb->name = std::move(name);
+        bb->id = id;
+      }
+      else if (std::regex_match(line, match, regex_label_bb)) {
+        uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
+        auto &name = match[3];
 
 #ifdef DEBUG_MODE
         std::cout << "BasicBlock: " << name << " (" << id << ")" << std::endl;
@@ -394,8 +415,17 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   return !inFunction;
 }
 
-bool generateStatistic(std::vector<Function> &bbinfo,
-                       std::vector<Assembly::Function> &asmbb) {
+bool generateStatistic(std::vector<Function> & /* bbinfo */,
+                       std::vector<Assembly::Function> & /* asmbb */) {
+  // // Exclude exception handler
+  // if (block.name.compare(0, 2, "eh") == 0) {
+  //   continue;
+  // }
+
+  // // Exclude cleanup
+  // if (block.name.compare(0, 7, "cleanup") == 0) {
+  //   continue;
+  // }
 
   return true;
 }
