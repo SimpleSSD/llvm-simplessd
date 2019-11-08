@@ -44,6 +44,9 @@ set(SRC_INST_APPLIER
 )
 set(SRC_STAT_GENERATOR
   ./src/stat_generator.cc
+  ./src/insts/insts.cc
+  ./src/insts/arm/cortex_a57.cc
+  ./src/insts/arm/cortex_r52.cc
 )
 set(SRC_UTIL
   ./src/util.cc
