@@ -362,7 +362,7 @@ bool InstructionApplier::runOnFunction(Function &func) {
         auto stat = iter->blocks.begin();
 
         for (; stat != iter->blocks.end(); ++stat) {
-          if (begin == stat->begin && end == stat->end) {
+          if (stat->begin <= begin && end <= stat->end) {
             break;
           }
         }
