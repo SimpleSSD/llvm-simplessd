@@ -126,6 +126,10 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
     return false;
   }
 
+#ifdef DEBUG_MODE
+  std::cout << "Loading bbinfo file " << filename << std::endl;
+#endif
+
   // State machine
   // func -> at -> block -> size -> from -> to
   //   |             `----------------------|
@@ -190,6 +194,10 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
 
         // Store function name
         current->name = std::move(line.substr(6));
+
+#ifdef DEBUG_MODE
+        std::cout << " Function: " << current->name << std::endl;
+#endif
 
         state = FUNC;
 
@@ -273,6 +281,10 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
 #endif
     return false;
   }
+
+#ifdef DEBUG_MODE
+  std::cout << "Loading assembly file " << filename << std::endl;
+#endif
 
   std::string line;
   bool inFunction = false;
@@ -417,6 +429,10 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         // Store name
         current->name = std::move(name);
 
+#ifdef DEBUG_MODE
+        std::cout << " Function: " << current->name << std::endl;
+#endif
+
         inFunction = true;
       }
       else if (isa == nullptr && std::regex_match(line, match, regex_cpu)) {
@@ -432,6 +448,10 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
 
 bool generateStatistic(std::vector<Function> &bbinfo,
                        std::vector<Assembly::Function> &asmbbinfo) {
+#ifdef DEBUG_MODE
+  std::cout << "Generating statistics" << std::endl;
+#endif
+
   // Matching asmbb to bbinfo
   for (auto &irfunc : bbinfo) {
     for (auto &asmfunc : asmbbinfo) {
@@ -503,6 +523,10 @@ bool saveStatistic(std::vector<Function> &list, std::string filename) {
 #endif
     return false;
   }
+
+#ifdef DEBUG_MODE
+  std::cout << "Saving statistics to file" << filename << std::endl;
+#endif
 
   for (auto &func : list) {
     file << "func: " << func.name << std::endl;
