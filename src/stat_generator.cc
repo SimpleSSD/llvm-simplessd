@@ -238,9 +238,145 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
   return true;
 }
 
-bool parseAssembly(std::vector<Assembly::Function> &list,
-                   std::string filename) {
-  return true;
+bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
+                   Instruction::Base *isa) {
+  std::ifstream file(filename);
+
+  if (!file.is_open()) {
+#ifdef DEBUG_MODE
+    std::cerr << "Failed to open file " << filename << std::endl;
+#endif
+    return false;
+  }
+
+  std::string line;
+  bool inFunction = false;
+  Assembly::Function *current = nullptr;
+  Assembly::BasicBlock *bb = nullptr;
+
+  std::regex regex_loc(
+      "\\W+\\.loc\\W+\\d+\\W+\\d+\\W+\\d+\\W+[#@] (.+):(\\d+):\\d+");
+  std::regex regex_bb("[#@] %bb\\.(\\d+)\\W+[#@] %(.+)");
+  std::regex regex_inst("\\W+([\\w\\d\\.]+)\\W+.+");
+  std::regex regex_func("[#@] -- Begin function (.+)");
+  std::regex regex_end("@ -- End function");
+
+  std::smatch match;
+
+  while (!file.eof()) {
+    std::getline(file, line);
+
+    if (inFunction) {
+      if (std::regex_match(line, match, regex_loc)) {
+        auto &name = match[1];
+        uint32_t row = strtoul(match[2].str().c_str(), nullptr, 10);
+
+#ifdef DEBUG_MODE
+        std::cout << "Location: " << name << ":" << line << std::endl;
+#endif
+
+        if (bb == nullptr) {
+          current->name = std::move(name);
+          current->at = row;
+        }
+        else {
+          // Ignore file name if different with function file
+          if (current->name.compare(name.str()) == 0) {
+            // Store min value to begin
+            if (bb->begin > row) {
+              bb->begin = row;
+            }
+
+            // Store max value to end
+            if (bb->end < row) {
+              bb->end = row;
+            }
+          }
+        }
+      }
+      else if (std::regex_match(line, match, regex_bb)) {
+        uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
+        auto &name = match[2];
+
+#ifdef DEBUG_MODE
+        std::cout << "BasicBlock: " << name << " (" << id << ")" << std::endl;
+#endif
+
+        // Append to list
+        current->blocks.emplace_back(Assembly::BasicBlock());
+        bb = &current->blocks.back();
+
+        // Store name and id
+        bb->name = std::move(name);
+        bb->id = id;
+      }
+      else if (std::regex_match(line, match, regex_inst)) {
+        auto op = match[1].str();
+
+#ifdef DEBUG_MODE
+        std::cout << "Instruction: " << op << std::endl;
+#endif
+
+        // Get instruction type and cycle
+        uint64_t cycle = 0;
+        uint64_t *where = nullptr;
+        auto type = isa->getStatistic(op, cycle);
+
+        switch (type) {
+          case Instruction::Type::Branch:
+            where = &bb->branch;
+            break;
+          case Instruction::Type::Load:
+            where = &bb->load;
+            break;
+          case Instruction::Type::Store:
+            where = &bb->store;
+            break;
+          case Instruction::Type::Arithmetic:
+            where = &bb->arithmetic;
+            break;
+          case Instruction::Type::FloatingPoint:
+            where = &bb->floatingPoint;
+            break;
+          case Instruction::Type::Other:
+            where = &bb->otherInsts;
+            break;
+          default:
+            break;
+        }
+
+        if (where) {
+          (*where)++;
+          bb->cycles += cycle;
+        }
+      }
+      else if (std::regex_search(line, match, regex_end)) {
+        inFunction = false;
+        current = nullptr;
+        bb = nullptr;
+      }
+    }
+    else {
+      if (std::regex_search(line, match, regex_func)) {
+        auto &name = match[1];
+
+#ifdef DEBUG_MODE
+        std::cout << "Function: " << name << std::endl;
+#endif
+
+        // Append to list
+        list.emplace_back(Assembly::Function());
+        current = &list.back();
+
+        // Store name
+        current->name = std::move(name);
+
+        inFunction = true;
+      }
+    }
+  }
+
+  return !inFunction;
 }
 
 bool generateStatistic(std::vector<Function> &bbinfo,
