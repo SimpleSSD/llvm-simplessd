@@ -62,14 +62,39 @@ void Utility::printFunctionName(raw_ostream &os, Function &func) {
   free(funcname);
 }
 
-bool Utility::printLineInfo(std::ofstream &os, Instruction &inst) {
+uint32_t Utility::getLineInfo(Instruction &inst, std::string &file) {
   auto &debug = inst.getDebugLoc();
 
   // Check it contains valid DILocation
   if (debug.get() && debug.getLine() != 0) {
     auto scope = cast<llvm::DIScope>(debug.getScope());
-    os << scope->getFilename().data() << ":";
-    os << debug.getLine();
+    file = scope->getFilename().data();
+    return debug.getLine();
+  }
+
+  return 0;
+}
+
+uint32_t Utility::getLineInfo(Function &func, std::string &file) {
+  auto subprog = func.getSubprogram();
+
+  if (subprog) {
+    file = subprog->getFilename().data();
+
+    return subprog->getLine();
+  }
+
+  return 0;
+}
+
+bool Utility::printLineInfo(std::ofstream &os, Instruction &inst) {
+  std::string file;
+  uint32_t line;
+
+  line = getLineInfo(inst, file);
+
+  if (line > 0) {
+    os << file << ":" << line;
 
     return true;
   }
@@ -78,11 +103,13 @@ bool Utility::printLineInfo(std::ofstream &os, Instruction &inst) {
 }
 
 bool Utility::printLineInfo(std::ofstream &os, Function &func) {
-  auto subprog = func.getSubprogram();
+  std::string file;
+  uint32_t line;
 
-  if (subprog) {
-    os << subprog->getFilename().data() << ":";
-    os << subprog->getLine();
+  line = getLineInfo(func, file);
+
+  if (line > 0) {
+    os << file << ":" << line;
 
     return true;
   }

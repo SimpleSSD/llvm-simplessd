@@ -25,6 +25,8 @@ class Utility {
                        llvm::Instruction ** = nullptr);
   static void printFunctionName(llvm::raw_ostream &, llvm::Function &);
 
+  static uint32_t getLineInfo(llvm::Instruction &, std::string &);
+  static uint32_t getLineInfo(llvm::Function &, std::string &);
   static bool printLineInfo(std::ofstream &, llvm::Instruction &);
   static bool printLineInfo(std::ofstream &, llvm::Function &);
 };
