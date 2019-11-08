@@ -368,37 +368,38 @@ bool InstructionApplier::runOnFunction(Function &func) {
         }
 
         if (stat == iter->blocks.end()) {
-          errs() << "Function: ";
-          printFunctionName(errs(), func);
-          errs() << "\n BasicBlock: " << block.getName() << " (" << begin << ":"
-                 << end << ") is not found in instruction statistic file.\n";
+          // Suppress warning if current block is very small
+          if (end - begin > 2) {
+            errs() << "Function: ";
+            printFunctionName(errs(), func);
+            errs() << "\n BasicBlock: " << block.getName() << " (" << begin
+                   << ":" << end
+                   << ") is not found in instruction statistic file.\n";
+          }
 
           continue;
         }
 
-        // Always use filename and line info -- may have different CFG
-        if (stat->name.compare(block.getName().data()) == 0) {
-          if (stat->branch > 0) {
-            makeAdd(&last, pointers.branch, stat->branch);
-          }
-          if (stat->load > 0) {
-            makeAdd(&last, pointers.load, stat->load);
-          }
-          if (stat->store > 0) {
-            makeAdd(&last, pointers.store, stat->store);
-          }
-          if (stat->arithmetic > 0) {
-            makeAdd(&last, pointers.arithmetic, stat->arithmetic);
-          }
-          if (stat->floatingPoint > 0) {
-            makeAdd(&last, pointers.floating, stat->floatingPoint);
-          }
-          if (stat->otherInsts > 0) {
-            makeAdd(&last, pointers.other, stat->otherInsts);
-          }
-          if (stat->cycles > 0) {
-            makeAdd(&last, pointers.cycles, stat->cycles);
-          }
+        if (stat->branch > 0) {
+          makeAdd(&last, pointers.branch, stat->branch);
+        }
+        if (stat->load > 0) {
+          makeAdd(&last, pointers.load, stat->load);
+        }
+        if (stat->store > 0) {
+          makeAdd(&last, pointers.store, stat->store);
+        }
+        if (stat->arithmetic > 0) {
+          makeAdd(&last, pointers.arithmetic, stat->arithmetic);
+        }
+        if (stat->floatingPoint > 0) {
+          makeAdd(&last, pointers.floating, stat->floatingPoint);
+        }
+        if (stat->otherInsts > 0) {
+          makeAdd(&last, pointers.other, stat->otherInsts);
+        }
+        if (stat->cycles > 0) {
+          makeAdd(&last, pointers.cycles, stat->cycles);
         }
       }
 
