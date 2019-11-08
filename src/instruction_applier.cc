@@ -306,7 +306,7 @@ bool InstructionApplier::runOnFunction(Function &func) {
 #endif
 
     // Find function
-    auto iter = funclist.find(fstat->getName().data());
+    auto iter = funclist.find(func.getName().data());
 
     if (iter != funclist.end()) {
       // Setup pointers of fstat
