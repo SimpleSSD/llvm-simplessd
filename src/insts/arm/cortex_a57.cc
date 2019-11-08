@@ -139,8 +139,15 @@ RuleList rule_a57 = {
 };
 
 Type CortexA57::getStatistic(std::string &op, uint64_t &cycles) {
-  if (rule_a57.count(op.front()) > 0) {
-    auto range = rule_a57.equal_range(op.front());
+  char first = op.front();
+  char other = first < 'a' ? first + ('a' - 'A') : first - ('a' - 'A');
+
+  if (rule_a57.count(other) > 0) {
+    first = other;
+  }
+
+  if (rule_a57.count(first) > 0) {
+    auto range = rule_a57.equal_range(first);
     std::smatch match;
 
     for (auto iter = range.first; iter != range.second; ++iter) {
