@@ -260,12 +260,12 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   Assembly::BasicBlock *bb = nullptr;
 
   std::regex regex_loc(
-      "\\W+\\.loc\\W+\\d+\\W+\\d+\\W+\\d+\\W+[#@] (.+):(\\d+):\\d+");
-  std::regex regex_bb("[#@] %bb\\.(\\d+)\\W+[#@] %(.+)");
-  std::regex regex_inst("\\W+([\\w\\d\\.]+)\\W+.+");
+      "\\s+\\.loc\\s+\\d+\\s+\\d+\\s+\\d+\\s+[#@] (.+):(\\d+):\\d+");
+  std::regex regex_bb("[#@] %bb\\.(\\d+):\\s+[#@] %(.+)");
+  std::regex regex_inst("\\s+([^\\.][\\w\\d\\.]+)\\s+.+");
   std::regex regex_func("[#@] -- Begin function (.+)");
   std::regex regex_end("@ -- End function");
-  std::regex regex_cpu("\\W+\\.cpu\\w+(.+)");
+  std::regex regex_cpu("\\s+\\.cpu\\s+(.+)");
 
   std::smatch match;
 
@@ -278,7 +278,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         uint32_t row = strtoul(match[2].str().c_str(), nullptr, 10);
 
 #ifdef DEBUG_MODE
-        std::cout << "Location: " << name << ":" << line << std::endl;
+        std::cout << "Location: " << name << ":" << row << std::endl;
 #endif
 
         if (bb == nullptr) {
