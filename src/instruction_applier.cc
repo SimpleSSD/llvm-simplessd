@@ -368,8 +368,10 @@ bool InstructionApplier::runOnFunction(Function &func) {
         }
 
         if (stat == iter->blocks.end()) {
-          errs() << " BasicBlock: " << block.getName()
-                 << " is not found in instruction statistic file.\n";
+          errs() << "Function: ";
+          printFunctionName(errs(), func);
+          errs() << "\n BasicBlock: " << block.getName() << " (" << begin << ":"
+                 << end << ") is not found in instruction statistic file.\n";
 
           continue;
         }
