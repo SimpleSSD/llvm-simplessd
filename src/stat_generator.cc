@@ -282,10 +282,6 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         auto &name = match[1];
         uint32_t row = strtoul(match[2].str().c_str(), nullptr, 10);
 
-#ifdef DEBUG_MODE
-        std::cout << "Location: " << name << ":" << row << std::endl;
-#endif
-
         if (bb == nullptr) {
           current->file = std::move(name);
           current->at = row;
@@ -309,10 +305,6 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
         auto &name = match[2];
 
-#ifdef DEBUG_MODE
-        std::cout << "BasicBlock: " << name << " (" << id << ")" << std::endl;
-#endif
-
         // Append to list
         current->blocks.emplace_back(Assembly::BasicBlock());
         bb = &current->blocks.back();
@@ -324,10 +316,6 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
       else if (std::regex_match(line, match, regex_label_bb)) {
         uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
         auto &name = match[3];
-
-#ifdef DEBUG_MODE
-        std::cout << "BasicBlock: " << name << " (" << id << ")" << std::endl;
-#endif
 
         // Append to list
         current->blocks.emplace_back(Assembly::BasicBlock());
@@ -343,10 +331,6 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         }
 
         auto op = match[1].str();
-
-#ifdef DEBUG_MODE
-        std::cout << "Instruction: " << op << std::endl;
-#endif
 
         // Get instruction type and cycle
         uint64_t cycle = 0;
