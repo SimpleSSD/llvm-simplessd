@@ -33,7 +33,7 @@ Base *initialize(std::string &cpuname) {
   }
 
 #ifdef DEBUG_MODE
-  std::cerr << "Not exact-match CPU found for " << cpuname << std::endl;
+  std::cerr << "Not exact-match CPU found for '" << cpuname << "'" << std::endl;
 #endif
 
   // First one

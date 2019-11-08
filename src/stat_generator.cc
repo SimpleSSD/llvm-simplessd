@@ -132,7 +132,7 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
       return 0;
     }
     else {
-      file = std::move(line.substr(from, idx));
+      file = std::move(line.substr(from, idx - from));
 
       return strtoul(line.substr(idx + 1).c_str(), nullptr, 10);
     }
@@ -146,8 +146,11 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
       if (line.compare(0, 6, "func: ") == 0) {
         state = IDLE;
       }
-      else if (line.compare(0, 8, "  block: ") == 0) {
+      else if (line.compare(0, 8, " block: ") == 0) {
         state = FUNC_AT;
+      }
+      else if (line.length() == 0) {
+        break;
       }
       else {
         return false;
@@ -185,7 +188,7 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
         break;
       case FUNC_AT:
         // Expect ' block: <basic block name>'
-        if (line.compare(0, 8, "  block: ") != 0) {
+        if (line.compare(0, 8, " block: ") != 0) {
           return false;
         }
 
