@@ -397,8 +397,6 @@ bool InstructionApplier::runOnFunction(Function &func) {
           if (stat->cycles > 0) {
             makeAdd(&last, pointers.cycles, stat->cycles);
           }
-
-          break;
         }
       }
 
