@@ -265,6 +265,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   std::regex regex_inst("\\W+([\\w\\d\\.]+)\\W+.+");
   std::regex regex_func("[#@] -- Begin function (.+)");
   std::regex regex_end("@ -- End function");
+  std::regex regex_cpu("\\W+\\.cpu\\w+(.+)");
 
   std::smatch match;
 
@@ -316,6 +317,10 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         bb->id = id;
       }
       else if (std::regex_match(line, match, regex_inst)) {
+        if (isa == nullptr) {
+          return false;
+        }
+
         auto op = match[1].str();
 
 #ifdef DEBUG_MODE
@@ -378,6 +383,11 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
 
         inFunction = true;
       }
+      else if (isa == nullptr && std::regex_match(line, match, regex_cpu)) {
+        auto cpu = match[1].str();
+
+        isa = Instruction::initialize(cpu);
+      }
     }
   }
 
@@ -429,16 +439,8 @@ int main(int argc, char *argv[]) {
   std::string bbinfo;
   std::string asmfile;
   std::string inststat;
-  std::string cputarget;
 
   switch (argc) {
-    case 3:
-#ifdef DEBUG_MODE
-      std::cout << "Use instruction from CPU: " << argv[2] << std::endl;
-#endif
-
-      cputarget = argv[2];
-      /* fallthrough */
     case 2:
 #ifdef DEBUG_MODE
       std::cout << "From module name: " << argv[1] << std::endl;
@@ -464,13 +466,11 @@ int main(int argc, char *argv[]) {
   std::vector<Function> funclist;
   std::vector<Assembly::Function> asmfunclist;
 
-  Instruction::Base *isa = Instruction::initialize(cputarget);
-
   if (!loadBasicBlockInfo(funclist, bbinfo)) {
     return 1;
   }
 
-  if (!parseAssembly(asmfunclist, asmfile, isa)) {
+  if (!parseAssembly(asmfunclist, asmfile, nullptr)) {
     return 1;
   }
 
