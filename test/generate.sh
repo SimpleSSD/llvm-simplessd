@@ -16,8 +16,8 @@ else
   TEXT_FLAG=""
 fi
 
-ASSEMBLY=$PREFIX"/"$1".S"
-OBJECT=$PREFIX"/"$1".o"
+ASSEMBLY=$LLVM_ASSEMBLY".S"
+OBJECT=$LLVM_ASSEMBLY".o"
 
 mkdir -p $PREFIX"/"$SOURCE_DIR
 
@@ -27,9 +27,7 @@ opt --load ./lib/llvm-simplessd/build/libllvm-simplessd.so --blockcollector -O2 
 llc -O2 -filetype=asm -o $ASSEMBLY $LLVM_ASSEMBLY_OPT
 
 # Instruction count
-# TODO: $ASSEMBLY + *.bbinfo.txt -> *.inststat.txt
-STATFILE=$LLVM_ASSEMBLY".inststat.txt"
-touch $STATFILE
+./lib/llvm-simplessd/build/inststat-generator $LLVM_ASSEMBLY
 
 # Apply instruction statistics
 clang++ -std=c++17 -g -emit-llvm -I. -I../lib/drampower/src -c $TEXT_FLAG -o $LLVM_ASSEMBLY $SOURCE_FILE
