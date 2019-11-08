@@ -305,28 +305,58 @@ bool InstructionApplier::runOnFunction(Function &func) {
     outs() << fstat->getName() << ".\n";
 #endif
 
-    // Setup pointers of fstat
-    makePointers(next, fstat);
+    // Find function
+    auto iter = funclist.find(fstat->getName().data());
 
-    // Apply instruction stats
-    for (auto &block : func) {
-      auto &last = block.back();
+    if (iter != funclist.end()) {
+      // Setup pointers of fstat
+      makePointers(next, fstat);
 
-      // TEMPCODE
-      // For each blocks, add 1 for all seven fields
-      makeAdd(&last, pointers.branch, 1);
-      makeAdd(&last, pointers.load, 1);
-      makeAdd(&last, pointers.store, 1);
-      makeAdd(&last, pointers.arithmetic, 1);
-      makeAdd(&last, pointers.floating, 1);
-      makeAdd(&last, pointers.other, 1);
-      makeAdd(&last, pointers.cycles, 7);
+      // Apply instruction stats
+      for (auto &block : func) {
+        auto &last = block.back();
+
+        // Find block
+        for (auto &stat : iter->second.blocks) {
+          if (stat.name.compare(block.getName().data()) == 0) {
+            if (stat.branch > 0) {
+              makeAdd(&last, pointers.branch, stat.branch);
+            }
+            if (stat.load > 0) {
+              makeAdd(&last, pointers.load, stat.load);
+            }
+            if (stat.store > 0) {
+              makeAdd(&last, pointers.store, stat.store);
+            }
+            if (stat.arithmetic > 0) {
+              makeAdd(&last, pointers.arithmetic, stat.arithmetic);
+            }
+            if (stat.floatingPoint > 0) {
+              makeAdd(&last, pointers.floating, stat.floatingPoint);
+            }
+            if (stat.otherInsts > 0) {
+              makeAdd(&last, pointers.other, stat.otherInsts);
+            }
+            if (stat.cycles > 0) {
+              makeAdd(&last, pointers.cycles, stat.cycles);
+            }
+
+            break;
+          }
+        }
+      }
+
+      // Verify function
+      if (verifyFunction(func, &errs())) {
+        func.dump();
+      }
     }
-
-    // Verify function
-    if (verifyFunction(func, &errs())) {
-      func.dump();
+#ifdef DEBUG_MODE
+    else {
+      errs() << " Instruction statistic file does not contains current "
+                "function.\n";
     }
+#endif
 
     return true;
   }
