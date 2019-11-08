@@ -96,6 +96,26 @@ struct Function {
 
 }  // namespace Assembly
 
+void assignBlock(BasicBlock &lhs, Assembly::BasicBlock &rhs) {
+  lhs.branch = rhs.branch;
+  lhs.load = rhs.load;
+  lhs.store = rhs.store;
+  lhs.arithmetic = rhs.arithmetic;
+  lhs.floatingPoint = rhs.floatingPoint;
+  lhs.otherInsts = rhs.otherInsts;
+  lhs.cycles = rhs.cycles;
+}
+
+void addBlock(BasicBlock &lhs, Assembly::BasicBlock &rhs) {
+  lhs.branch += rhs.branch;
+  lhs.load += rhs.load;
+  lhs.store += rhs.store;
+  lhs.arithmetic += rhs.arithmetic;
+  lhs.floatingPoint += rhs.floatingPoint;
+  lhs.otherInsts += rhs.otherInsts;
+  lhs.cycles += rhs.cycles;
+}
+
 bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
   std::ifstream file(filename);
 
@@ -408,17 +428,66 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   return !inFunction;
 }
 
-bool generateStatistic(std::vector<Function> & /* bbinfo */,
-                       std::vector<Assembly::Function> & /* asmbb */) {
-  // // Exclude exception handler
-  // if (block.name.compare(0, 2, "eh") == 0) {
-  //   continue;
-  // }
+bool generateStatistic(std::vector<Function> &bbinfo,
+                       std::vector<Assembly::Function> &asmbbinfo) {
+  // Matching asmbb to bbinfo
+  for (auto &irfunc : bbinfo) {
+    for (auto &asmfunc : asmbbinfo) {
+      // Find function
+      if (irfunc.name.compare(asmfunc.name) == 0 && irfunc.at == asmfunc.at) {
+#ifdef DEBUG_MODE
+        std::cout << "Function " << irfunc.name << " found" << std::endl;
+#endif
+        // Matching basicblocks
+        for (auto &irbb : irfunc.blocks) {
+          // Exclude exception handler
+          if (irbb.name.compare(0, 2, "eh") == 0) {
+            irbb.skip = true;
 
-  // // Exclude cleanup
-  // if (block.name.compare(0, 7, "cleanup") == 0) {
-  //   continue;
-  // }
+            continue;
+          }
+
+          // Exclude cleanup
+          if (irbb.name.compare(0, 7, "cleanup") == 0) {
+            irbb.skip = true;
+
+            continue;
+          }
+
+          // We have at least one basic block (entry) -- not checking end()
+          for (auto &asmbb : asmfunc.blocks) {
+            // Find basic block (by name)
+            if (irbb.name.compare(asmbb.name) == 0) {
+              // Exact same size
+              if (irbb.begin == asmbb.begin && asmbb.end == irbb.end) {
+                assignBlock(irbb, asmbb);
+              }
+              // irbb > asmbb
+              else if (irbb.begin <= asmbb.begin && asmbb.end <= irbb.end) {
+                addBlock(irbb, asmbb);
+              }
+              // asmbb > irbb or intersect
+              else {
+// TODO: HANDLE THIS CASE!
+#ifdef DEBUG_MODE
+                std::cerr << "Cannot assign statistics: " << irfunc.name
+                          << std::endl;
+                std::cerr << " BasicBlock: " << irbb.name << " <- "
+                          << asmbb.name << std::endl;
+                std::cerr << "  IR: " << irbb.name << " (" << irbb.begin << ":"
+                          << irbb.end << ")" << std::endl;
+                std::cerr << "  ASM: " << asmbb.name << " (" << asmbb.begin
+                          << ":" << asmbb.end << ")" << std::endl;
+#endif
+              }
+            }
+          }
+        }
+
+        break;
+      }
+    }
+  }
 
   return true;
 }
