@@ -267,6 +267,11 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
 
         state = BLOCK_TO;
 
+        // Check source info
+        if (bb->from.length() == 0 || bb->to.length() == 0) {
+          bb->skip = true;
+        }
+
         break;
       default:
         return false;
@@ -470,6 +475,11 @@ bool generateStatistic(std::vector<Function> &bbinfo,
 #endif
         // Matching basicblocks
         for (auto &irbb : irfunc.blocks) {
+          // Invalid source info
+          if (irbb.skip) {
+            continue;
+          }
+
           // Exclude exception handler
           if (irbb.name.compare(0, 2, "eh") == 0) {
             irbb.skip = true;
@@ -538,6 +548,7 @@ bool saveStatistic(std::vector<Function> &list, std::string filename) {
 
   for (auto &func : list) {
     file << "func: " << func.name << std::endl;
+    file << " at: " << func.file << ":" << func.at << std::endl;
 
     for (auto &block : func.blocks) {
       if (block.skip) {
