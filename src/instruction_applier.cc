@@ -10,6 +10,7 @@
 #include <string>
 
 #include "llvm/ADT/Statistic.h"
+#include "llvm/IR/DebugInfoMetadata.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/Instructions.h"
@@ -99,14 +100,15 @@ void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
 
 void InstructionApplier::parseStatFile() {
   // State machine
-  // func -> block -> from -> to -> stat
-  //   |       `----------------------|
-  //   `------------------------------'
+  // func -> at -> block -> from -> to -> stat
+  //   |             `----------------------|
+  //   `------------------------------------'
 
   std::string line;
   enum STATE {
     IDLE,        // -> FUNC/terminate
-    FUNC,        // -> BLOCK
+    FUNC,        // -> FUNC_AT
+    FUNC_AT,     // -> BLOCK
     BLOCK,       // -> BLOCK_FROM
     BLOCK_FROM,  // -> BLOCK_TO
     BLOCK_TO,    // -> BLOCK_STAT
@@ -156,25 +158,31 @@ void InstructionApplier::parseStatFile() {
         }
 
         // Create function entry
-        auto name = std::move(line.substr(6));
-        auto ret = funclist.emplace(name, FuncStat());
-
-        if (!ret.second) {
-          return;
-        }
-
-        current = &ret.first->second;
-
-#ifdef DEBUG_MODE
-        outs() << "Function: " << name << "\n";
-#endif
+        funclist.emplace_back(FuncStat());
+        current = &funclist.back();
 
         // Store function name
-        current->name = std::move(name);
+        current->name = std::move(line.substr(6));
+
+#ifdef DEBUG_MODE
+        outs() << "Function: " << current->name << "\n";
+#endif
 
         state = FUNC;
       } break;
       case FUNC:
+        // Expect ' at: [filename:line]'
+        if (line.compare(0, 5, " at: ") != 0) {
+          return;
+        }
+
+        // Store source info
+        current->at = parseFile(line, current->file, 5);
+
+        state = FUNC_AT;
+
+        break;
+      case FUNC_AT:
         // Expect ' block: <basic block name>'
         if (line.compare(0, 8, " block: ") != 0) {
           return;
@@ -305,8 +313,38 @@ bool InstructionApplier::runOnFunction(Function &func) {
     outs() << fstat->getName() << ".\n";
 #endif
 
+    std::string from;
+    std::string to;
+    uint32_t begin;
+    uint32_t end;
+
     // Find function
-    auto iter = funclist.find(func.getName().data());
+    auto iter = funclist.begin();
+
+    // Match name
+    for (; iter != funclist.end(); ++iter) {
+      if (iter->name.compare(func.getName().data()) == 0) {
+        break;
+      }
+    }
+
+    if (iter == funclist.end()) {
+      // (u)int64_t is different in 32bit ((unsigned) long long) and 64bit
+      // ((unsigned) long), introducing different C++ mangled name.
+      // Just match with file name and line number.
+      std::string ffile;
+      uint32_t fline;
+
+      fline = getLineInfo(func, ffile);
+
+      if (fline > 0) {
+        for (iter = funclist.begin(); iter != funclist.end(); ++iter) {
+          if (iter->file.compare(ffile) == 0 && iter->at == fline) {
+            break;
+          }
+        }
+      }
+    }
 
     if (iter != funclist.end()) {
       // Setup pointers of fstat
@@ -316,33 +354,51 @@ bool InstructionApplier::runOnFunction(Function &func) {
       for (auto &block : func) {
         auto &last = block.back();
 
-        // Find block
-        for (auto &stat : iter->second.blocks) {
-          if (stat.name.compare(block.getName().data()) == 0) {
-            if (stat.branch > 0) {
-              makeAdd(&last, pointers.branch, stat.branch);
-            }
-            if (stat.load > 0) {
-              makeAdd(&last, pointers.load, stat.load);
-            }
-            if (stat.store > 0) {
-              makeAdd(&last, pointers.store, stat.store);
-            }
-            if (stat.arithmetic > 0) {
-              makeAdd(&last, pointers.arithmetic, stat.arithmetic);
-            }
-            if (stat.floatingPoint > 0) {
-              makeAdd(&last, pointers.floating, stat.floatingPoint);
-            }
-            if (stat.otherInsts > 0) {
-              makeAdd(&last, pointers.other, stat.otherInsts);
-            }
-            if (stat.cycles > 0) {
-              makeAdd(&last, pointers.cycles, stat.cycles);
-            }
+        // Get line info
+        begin = getFirstLine(block, from);
+        end = getLastLine(block, to);
 
+        // Find block
+        auto stat = iter->blocks.begin();
+
+        for (; stat != iter->blocks.end(); ++stat) {
+          if (begin == stat->begin && end == stat->end) {
             break;
           }
+        }
+
+        if (stat == iter->blocks.end()) {
+          errs() << " BasicBlock: " << block.getName()
+                 << " is not found in instruction statistic file.\n";
+
+          continue;
+        }
+
+        // Always use filename and line info -- may have different CFG
+        if (stat->name.compare(block.getName().data()) == 0) {
+          if (stat->branch > 0) {
+            makeAdd(&last, pointers.branch, stat->branch);
+          }
+          if (stat->load > 0) {
+            makeAdd(&last, pointers.load, stat->load);
+          }
+          if (stat->store > 0) {
+            makeAdd(&last, pointers.store, stat->store);
+          }
+          if (stat->arithmetic > 0) {
+            makeAdd(&last, pointers.arithmetic, stat->arithmetic);
+          }
+          if (stat->floatingPoint > 0) {
+            makeAdd(&last, pointers.floating, stat->floatingPoint);
+          }
+          if (stat->otherInsts > 0) {
+            makeAdd(&last, pointers.other, stat->otherInsts);
+          }
+          if (stat->cycles > 0) {
+            makeAdd(&last, pointers.cycles, stat->cycles);
+          }
+
+          break;
         }
       }
 

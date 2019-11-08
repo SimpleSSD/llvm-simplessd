@@ -12,7 +12,6 @@
 
 #include <fstream>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "llvm/Pass.h"
@@ -42,6 +41,8 @@ struct BlockStat {
 
 struct FuncStat {
   std::string name;
+  std::string file;
+  uint32_t at;
 
   std::vector<BlockStat> blocks;
 };
@@ -58,7 +59,7 @@ class InstructionApplier : public llvm::FunctionPass, Utility {
   bool inited;
 
   std::ifstream infile;
-  std::unordered_map<std::string, FuncStat> funclist;
+  std::vector<FuncStat> funclist;
 
   struct {
     llvm::Value *branch;
