@@ -299,7 +299,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   std::regex regex_loc(
       "\\s+\\.loc\\s+\\d+\\s+\\d+\\s+\\d+.+[#@] (.+):(\\d+):\\d+",
       std::regex::ECMAScript | std::regex::icase);
-  std::regex regex_bb("[#@] %bb\\.(\\d+):\\s+[#@] %(.+)",
+  std::regex regex_bb("[#@] %bb\\.(\\d+):(\\s+[#@] %(.+))?",
                       std::regex::ECMAScript | std::regex::icase);
   std::regex regex_label_bb("\\.LBB(\\d+)(_\\d+)*:\\s+[#@] %(.+)",
                             std::regex::ECMAScript | std::regex::icase);
@@ -340,14 +340,17 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
       }
       else if (std::regex_match(line, match, regex_bb)) {
         uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
-        auto &name = match[2];
 
         // Append to list
         current->blocks.emplace_back(Assembly::BasicBlock());
         bb = &current->blocks.back();
 
         // Store name and id
-        bb->name = std::move(name);
+        if (match.length() > 3) {
+          auto &name = match[3];
+          bb->name = std::move(name);
+        }
+
         bb->id = id;
       }
       else if (std::regex_match(line, match, regex_label_bb)) {
