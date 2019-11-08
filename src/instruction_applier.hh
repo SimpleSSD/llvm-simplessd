@@ -24,8 +24,8 @@ struct BlockStat {
 
   std::string from;
   std::string to;
-  uint32_t fline;
-  uint32_t tline;
+  uint32_t begin;
+  uint32_t end;
 
   // Instruction count
   uint64_t branch;
@@ -42,9 +42,6 @@ struct BlockStat {
 struct FuncStat {
   std::string name;
 
-  std::string from;
-  uint32_t fline;
-
   std::vector<BlockStat> blocks;
 };
 
@@ -60,6 +57,7 @@ class InstructionApplier : public llvm::FunctionPass, Utility {
   bool inited;
 
   std::ifstream infile;
+  std::unordered_map<std::string, FuncStat> funclist;
 
   struct {
     llvm::Value *branch;
@@ -73,6 +71,8 @@ class InstructionApplier : public llvm::FunctionPass, Utility {
 
   void makePointers(llvm::Instruction *, llvm::Value *);
   void makeAdd(llvm::Instruction *, llvm::Value *, uint64_t);
+
+  void parseStatFile();
 
  public:
   static char ID;

@@ -97,6 +97,169 @@ void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
   store->setAlignment(8);
 }
 
+void InstructionApplier::parseStatFile() {
+  // State machine
+  // func -> block -> from -> to -> stat
+  //   |       `----------------------|
+  //   `------------------------------'
+
+  std::string line;
+  enum STATE {
+    IDLE,        // -> FUNC/terminate
+    FUNC,        // -> BLOCK
+    BLOCK,       // -> BLOCK_FROM
+    BLOCK_FROM,  // -> BLOCK_TO
+    BLOCK_TO,    // -> BLOCK_STAT
+    BLOCK_STAT,  // -> IDLE/FUNC
+  } state = IDLE;
+  FuncStat *current = nullptr;
+  BlockStat *bb = nullptr;
+
+  auto parseFile = [](std::string &line, std::string &file,
+                      size_t from) -> uint32_t {
+    auto idx = line.find_last_of(':');
+
+    if (idx == std::string::npos) {
+      return 0;
+    }
+    else {
+      file = std::move(line.substr(from, idx - from));
+
+      return strtoul(line.substr(idx + 1).c_str(), nullptr, 10);
+    }
+  };
+
+  while (!infile.eof()) {
+    // Read one line
+    std::getline(infile, line);
+
+    if (state == BLOCK_STAT) {
+      if (line.compare(0, 6, "func: ") == 0) {
+        state = IDLE;
+      }
+      else if (line.compare(0, 8, " block: ") == 0) {
+        state = FUNC;
+      }
+      else if (line.length() == 0) {
+        break;
+      }
+      else {
+        return;
+      }
+    }
+
+    switch (state) {
+      case IDLE: {
+        // Expect 'func: <Function name>'
+        if (line.compare(0, 6, "func: ") != 0) {
+          return;
+        }
+
+        // Create function entry
+        auto name = std::move(line.substr(6));
+        auto ret = funclist.emplace(name, FuncStat());
+
+        if (!ret.second) {
+          return;
+        }
+
+        current = &ret.first->second;
+
+#ifdef DEBUG_MODE
+        outs() << "Function: " << name << "\n";
+#endif
+
+        // Store function name
+        current->name = std::move(name);
+
+        state = FUNC;
+      } break;
+      case FUNC:
+        // Expect ' block: <basic block name>'
+        if (line.compare(0, 8, " block: ") != 0) {
+          return;
+        }
+
+        // Create basicblock entry
+        current->blocks.emplace_back(BlockStat());
+        bb = &current->blocks.back();
+
+        // Store basicblock name
+        bb->name = std::move(line.substr(8));
+
+#ifdef DEBUG_MODE
+        outs() << " BasicBlock: " << bb->name << "\n";
+#endif
+
+        state = BLOCK;
+
+        break;
+      case BLOCK:
+        // Expect '  from: [filename:line]'
+        if (line.compare(0, 8, "  from: ") != 0) {
+          return;
+        }
+
+        // Store source info
+        bb->begin = parseFile(line, bb->from, 8);
+
+        state = BLOCK_FROM;
+
+        break;
+      case BLOCK_FROM:
+        // Expect '  to: [filename:line]'
+        if (line.compare(0, 6, "  to: ") != 0) {
+          return;
+        }
+
+        // Store source info
+        bb->end = parseFile(line, bb->to, 6);
+
+        state = BLOCK_TO;
+
+        break;
+      case BLOCK_TO: {
+        // Expect '  stat: <stat>'
+        if (line.compare(0, 8, "  stat: ") != 0) {
+          return;
+        }
+
+        // Parse stat
+        char *str = (char *)line.c_str() + 8;
+        char *last = nullptr;
+
+        bb->branch = strtoul(str, &last, 10);
+        str = last + 1;
+        bb->load = strtoul(str, &last, 10);
+        str = last + 1;
+        bb->store = strtoul(str, &last, 10);
+        str = last + 1;
+        bb->arithmetic = strtoul(str, &last, 10);
+        str = last + 1;
+        bb->floatingPoint = strtoul(str, &last, 10);
+        str = last + 1;
+        bb->otherInsts = strtoul(str, &last, 10);
+        str = last + 1;
+        bb->cycles = strtoul(str, nullptr, 10);
+
+#ifdef DEBUG_MODE
+        outs() << "  Stat: " << bb->branch << ", " << bb->load << ", "
+               << bb->store << ", " << bb->arithmetic << ", "
+               << bb->floatingPoint << ", " << bb->otherInsts << ", "
+               << bb->cycles << ", "
+               << "\n";
+#endif
+
+        state = BLOCK_STAT;
+      } break;
+      default:
+        return;
+    }
+  }
+
+  inited = true;
+}
+
 bool InstructionApplier::doInitialization(Module &module) {
   std::string filename(inputFile);
 
@@ -115,7 +278,7 @@ bool InstructionApplier::doInitialization(Module &module) {
   infile.open(filename);
 
   if (infile.is_open()) {
-    inited = true;
+    parseStatFile();
   }
   else {
     errs() << " Failed to open file: " << filename << "\n";
