@@ -29,6 +29,9 @@ class Utility {
   static uint32_t getLineInfo(llvm::Function &, std::string &);
   static bool printLineInfo(std::ofstream &, llvm::Instruction &);
   static bool printLineInfo(std::ofstream &, llvm::Function &);
+
+  static uint32_t getFirstLine(llvm::BasicBlock &, std::string &);
+  static uint32_t getLastLine(llvm::BasicBlock &, std::string &);
 };
 
 }  // namespace SimpleSSD::LLVM

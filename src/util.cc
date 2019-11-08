@@ -117,4 +117,40 @@ bool Utility::printLineInfo(std::ofstream &os, Function &func) {
   return false;
 }
 
+uint32_t Utility::getFirstLine(BasicBlock &block, std::string &file) {
+  uint32_t line = 0;
+
+  auto iter = block.begin();
+
+  while (iter != block.end()) {
+    line = getLineInfo(*iter, file);
+
+    if (line > 0) {
+      break;
+    }
+
+    ++iter;
+  }
+
+  return line;
+}
+
+uint32_t Utility::getLastLine(BasicBlock &block, std::string &file) {
+  uint32_t line = 0;
+
+  auto iter = block.rbegin();
+
+  while (iter != block.rend()) {
+    line = getLineInfo(*iter, file);
+
+    if (line > 0) {
+      break;
+    }
+
+    ++iter;
+  }
+
+  return line;
+}
+
 }  // namespace SimpleSSD::LLVM
