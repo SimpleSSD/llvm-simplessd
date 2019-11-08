@@ -351,12 +351,11 @@ bool InstructionApplier::runOnFunction(Function &func) {
         func.dump();
       }
     }
-#ifdef DEBUG_MODE
     else {
-      errs() << " Instruction statistic file does not contains current "
-                "function.\n";
+      errs() << "Function: ";
+      printFunctionName(errs(), func);
+      errs() << " is not found in instruction statistic file.\n";
     }
-#endif
 
     return true;
   }
