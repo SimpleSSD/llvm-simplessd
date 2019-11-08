@@ -367,6 +367,15 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
       }
       else if (std::regex_search(line, match, regex_end)) {
         inFunction = false;
+
+        // Fill line info of entry block
+        if (current->blocks.front().begin > current->at) {
+          current->blocks.front().begin = current->at;
+        }
+        if (current->blocks.front().end == 0) {
+          current->blocks.front().end = current->at;
+        }
+
         current = nullptr;
         bb = nullptr;
       }
