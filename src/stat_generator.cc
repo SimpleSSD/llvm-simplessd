@@ -262,7 +262,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   std::regex regex_loc(
       "\\s+\\.loc\\s+\\d+\\s+\\d+\\s+\\d+\\s+[#@] (.+):(\\d+):\\d+");
   std::regex regex_bb("[#@] %bb\\.(\\d+):\\s+[#@] %(.+)");
-  std::regex regex_inst("\\s+([^\\.][\\w\\d\\.]+)\\s+.+");
+  std::regex regex_inst("\\s+([^\\.][\\w\\d\\.]*)\\s+.+");
   std::regex regex_func("[#@] -- Begin function (.+)");
   std::regex regex_end("@ -- End function");
   std::regex regex_cpu("\\s+\\.cpu\\s+(.+)");
