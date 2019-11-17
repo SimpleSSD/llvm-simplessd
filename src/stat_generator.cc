@@ -271,6 +271,10 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
         if (bb->from.length() == 0 || bb->to.length() == 0) {
           bb->skip = true;
         }
+        else if (bb->from.compare(current->file) != 0 ||
+                 bb->to.compare(current->file) != 0) {
+          bb->skip = true;
+        }
 
         break;
       default:
@@ -511,6 +515,7 @@ bool generateStatistic(std::vector<Function> &bbinfo,
                 irbb.skip = true;
 
                 // TODO: HANDLE THIS CASE!
+#ifdef DEBUG_MODE
                 std::cerr << "Cannot assign statistics: " << irfunc.name
                           << std::endl;
                 std::cerr << " BasicBlock: " << irbb.name << " <- "
@@ -519,6 +524,7 @@ bool generateStatistic(std::vector<Function> &bbinfo,
                           << irbb.end << ")" << std::endl;
                 std::cerr << "  ASM: " << asmbb.name << " (" << asmbb.begin
                           << ":" << asmbb.end << ")" << std::endl;
+#endif
               }
             }
           }
