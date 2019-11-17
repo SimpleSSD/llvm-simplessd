@@ -508,8 +508,9 @@ bool generateStatistic(std::vector<Function> &bbinfo,
               }
               // asmbb > irbb or intersect
               else {
-// TODO: HANDLE THIS CASE!
-#ifdef DEBUG_MODE
+                irbb.skip = true;
+
+                // TODO: HANDLE THIS CASE!
                 std::cerr << "Cannot assign statistics: " << irfunc.name
                           << std::endl;
                 std::cerr << " BasicBlock: " << irbb.name << " <- "
@@ -518,7 +519,6 @@ bool generateStatistic(std::vector<Function> &bbinfo,
                           << irbb.end << ")" << std::endl;
                 std::cerr << "  ASM: " << asmbb.name << " (" << asmbb.begin
                           << ":" << asmbb.end << ")" << std::endl;
-#endif
               }
             }
           }
