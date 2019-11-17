@@ -191,6 +191,7 @@ void InstructionApplier::parseStatFile() {
         // Create basicblock entry
         current->blocks.emplace_back(BlockStat());
         bb = &current->blocks.back();
+        bb->applied = false;
 
         // Store basicblock name
         bb->name = std::move(line.substr(8));
@@ -389,7 +390,12 @@ bool InstructionApplier::runOnFunction(Function &func) {
           continue;
         }
 
+        if (stat->applied) {
+          continue;
+        }
+
         handled++;
+        stat->applied = true;
 
         if (stat->branch > 0) {
           makeAdd(&last, pointers.branch, stat->branch);

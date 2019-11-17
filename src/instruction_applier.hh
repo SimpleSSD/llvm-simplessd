@@ -27,6 +27,8 @@ struct BlockStat {
   uint32_t begin;
   uint32_t end;
 
+  bool applied;
+
   // Instruction count
   uint64_t branch;
   uint64_t load;
