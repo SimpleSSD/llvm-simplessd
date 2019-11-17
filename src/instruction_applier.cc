@@ -287,6 +287,10 @@ bool InstructionApplier::doInitialization(Module &module) {
 
   if (infile.is_open()) {
     parseStatFile();
+
+    filename += ".log";
+
+    resultfile.open(filename);
   }
   else {
     errs() << " Failed to open file: " << filename << "\n";
@@ -317,6 +321,9 @@ bool InstructionApplier::runOnFunction(Function &func) {
     std::string to;
     uint32_t begin;
     uint32_t end;
+
+    uint64_t handled = 0;
+    uint64_t total = 0;
 
     // Find function
     auto iter = funclist.begin();
@@ -354,6 +361,8 @@ bool InstructionApplier::runOnFunction(Function &func) {
       for (auto &block : func) {
         auto &last = block.back();
 
+        total++;
+
         // Get line info
         begin = getFirstLine(block, from);
         end = getLastLine(block, to);
@@ -379,6 +388,8 @@ bool InstructionApplier::runOnFunction(Function &func) {
 
           continue;
         }
+
+        handled++;
 
         if (stat->branch > 0) {
           makeAdd(&last, pointers.branch, stat->branch);
@@ -407,6 +418,13 @@ bool InstructionApplier::runOnFunction(Function &func) {
       if (verifyFunction(func, &errs())) {
         func.dump();
       }
+
+      // Log result if possible
+      if (resultfile.is_open()) {
+        resultfile << "Function: " << func.getName().data() << std::endl;
+        resultfile << " Total basic blocks: " << total << std::endl;
+        resultfile << " Handled basic blocks: " << handled << std::endl;
+      }
     }
     else {
       errs() << "Function: ";
@@ -423,6 +441,10 @@ bool InstructionApplier::runOnFunction(Function &func) {
 bool InstructionApplier::doFinalization(Module &) {
   if (inited) {
     infile.close();
+
+    if (resultfile.is_open()) {
+      resultfile.close();
+    }
   }
 
   inited = false;

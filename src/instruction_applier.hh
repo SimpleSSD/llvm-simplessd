@@ -59,6 +59,7 @@ class InstructionApplier : public llvm::FunctionPass, Utility {
   bool inited;
 
   std::ifstream infile;
+  std::ofstream resultfile;
   std::vector<FuncStat> funclist;
 
   struct {
