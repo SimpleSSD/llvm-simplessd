@@ -74,33 +74,72 @@ bool BasicBlockCollector::runOnFunction(Function &func) {
     outs() << ".\n";
 #endif
 
-    std::string file;
+    std::string funcfile;
     uint32_t line;
+
+    // Get function info
+    line = getLineInfo(func, funcfile);
 
     // Write function name
     outfile << "func: " << func.getName().data() << std::endl;
-    outfile << " at: ";
-
-    printLineInfo(outfile, func);
-
-    outfile << std::endl;
+    outfile << " at: " << funcfile << ":" << line << std::endl;
 
     for (auto &block : func) {
-      // Write basic block name
+      std::vector<uint32_t> linelist;
+      std::string file;
+
+      // Filter blocks by name
+      /// All blocks begins with dot (.)
+      if (block.getName().str().compare(0, 1, ".") == 0) {
+        continue;
+      }
+      /// All blocks begins with eh (exception handler)
+      if (block.getName().str().compare(0, 2, "eh") == 0) {
+        continue;
+      }
+      /// All blocks begins with cleanup
+      if (block.getName().str().compare(0, 7, "cleanup") == 0) {
+        continue;
+      }
+      /// All blocks begins with unreach
+      if (block.getName().str().compare(0, 7, "unreach") == 0) {
+        continue;
+      }
+
+      // Skip empty block
+      if (block.size() == 0) {
+        continue;
+      }
+
+      // Reserve for performance
+      linelist.reserve(block.size());
+
+      // Write all line information if line info is valid + same module
+      for (auto &inst : block) {
+        line = getLineInfo(inst, file);
+
+        if (line > 0 && file.compare(funcfile) == 0) {
+          linelist.emplace_back(line);
+        }
+      }
+
+      // Skip empty block
+      if (linelist.size() == 0) {
+        continue;
+      }
+
+      // Sort
+      std::sort(linelist.begin(), linelist.end());
+
+      // Unique
+      auto end = std::unique(linelist.begin(), linelist.end());
+
+      // Printout
       outfile << " block: " << block.getName().data() << std::endl;
 
-      // Write IR count
-      outfile << "  size: " << block.size() << std::endl;
-
-      // Print first instruction (with debug info)
-      line = getFirstLine(block, file);
-
-      outfile << "  from: " << file << ":" << line << std::endl;
-
-      // Print last instruction (with debug info)
-      line = getLastLine(block, file);
-
-      outfile << "  to: " << file << ":" << line << std::endl;
+      for (auto iter = linelist.begin(); iter != end; ++iter) {
+        outfile << "  " << *iter << ":" << std::endl;
+      }
     }
 
     // We removed markFunction
