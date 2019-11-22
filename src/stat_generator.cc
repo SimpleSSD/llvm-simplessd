@@ -77,7 +77,7 @@ struct Function {
   std::string file;
   uint32_t at;
 
-  std::map<uint32_t, Line> lines;
+  std::unordered_map<uint32_t, Line> lines;
 
   Function() : at(0) {}
 };
@@ -252,7 +252,7 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   std::smatch match;
 
   bool lineValid = false;
-  std::map<uint32_t, Assembly::Line>::iterator currentLine;
+  std::unordered_map<uint32_t, Assembly::Line>::iterator currentLine;
 
   while (!file.eof()) {
     std::getline(file, line);
