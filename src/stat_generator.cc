@@ -14,15 +14,7 @@
 #include "insts/insts.hh"
 #include "src/def.hh"
 
-struct BasicBlock {
-  bool skip;
-
-  std::string name;
-  std::string from;
-  std::string to;
-  uint32_t begin;
-  uint32_t end;
-
+struct Line {
   // Instruction count
   uint64_t branch;
   uint64_t load;
@@ -34,17 +26,20 @@ struct BasicBlock {
   // Cycle consumed
   uint64_t cycles;
 
-  BasicBlock()
-      : skip(false),
-        begin(0),
-        end(0),
-        branch(0),
+  Line()
+      : branch(0),
         load(0),
         store(0),
         arithmetic(0),
         floatingPoint(0),
         otherInsts(0),
         cycles(0) {}
+};
+
+struct BasicBlock {
+  std::string name;
+
+  std::unordered_map<uint32_t, Line> lines;
 };
 
 struct Function {
@@ -57,13 +52,7 @@ struct Function {
 
 namespace Assembly {
 
-struct BasicBlock {
-  uint32_t id;
-  std::string name;
-
-  uint32_t begin;
-  uint32_t end;
-
+struct Line {
   uint64_t branch;
   uint64_t load;
   uint64_t store;
@@ -73,11 +62,8 @@ struct BasicBlock {
 
   uint64_t cycles;
 
-  BasicBlock()
-      : id(0),
-        begin(std::numeric_limits<uint32_t>::max()),
-        end(0),
-        branch(0),
+  Line()
+      : branch(0),
         load(0),
         store(0),
         arithmetic(0),
@@ -91,30 +77,12 @@ struct Function {
   std::string file;
   uint32_t at;
 
-  std::vector<BasicBlock> blocks;
+  std::map<uint32_t, Line> lines;
+
+  Function() : at(0) {}
 };
 
 }  // namespace Assembly
-
-void assignBlock(BasicBlock &lhs, Assembly::BasicBlock &rhs) {
-  lhs.branch = rhs.branch;
-  lhs.load = rhs.load;
-  lhs.store = rhs.store;
-  lhs.arithmetic = rhs.arithmetic;
-  lhs.floatingPoint = rhs.floatingPoint;
-  lhs.otherInsts = rhs.otherInsts;
-  lhs.cycles = rhs.cycles;
-}
-
-void addBlock(BasicBlock &lhs, Assembly::BasicBlock &rhs) {
-  lhs.branch += rhs.branch;
-  lhs.load += rhs.load;
-  lhs.store += rhs.store;
-  lhs.arithmetic += rhs.arithmetic;
-  lhs.floatingPoint += rhs.floatingPoint;
-  lhs.otherInsts += rhs.otherInsts;
-  lhs.cycles += rhs.cycles;
-}
 
 bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
   std::ifstream file(filename);
@@ -131,19 +99,16 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
 #endif
 
   // State machine
-  // func -> at -> block -> size -> from -> to
-  //   |             `----------------------|
-  //   `------------------------------------'
+  // func -> at -> block -> numbers:
+  //   |             `--------|
+  //   `----------------------'
 
   std::string line;
   enum STATE {
-    IDLE,        // -> FUNC/terminate
-    FUNC,        // -> FUNC_AT
-    FUNC_AT,     // -> BLOCK
-    BLOCK,       // -> BLOCK_SIZE
-    BLOCK_SIZE,  // -> BLOCK_FROM
-    BLOCK_FROM,  // -> BLOCK_TO
-    BLOCK_TO,    // -> IDLE/FUNC_AT
+    IDLE,     // -> FUNC/terminate
+    FUNC,     // -> FUNC_AT
+    FUNC_AT,  // -> BLOCK
+    BLOCK,    // -> IDLE/FUNC_AT/BLOCK
   } state = IDLE;
   Function *current = nullptr;
   BasicBlock *bb = nullptr;
@@ -162,16 +127,29 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
     }
   };
 
+  std::smatch match;
+  std::regex regex_line("  (\\d+):");
+
+  uint32_t linenumber;
+
   while (!file.eof()) {
     // Read one line
     std::getline(file, line);
 
-    if (state == BLOCK_TO) {
+    if (state == BLOCK) {
       if (line.compare(0, 6, "func: ") == 0) {
         state = IDLE;
       }
       else if (line.compare(0, 8, " block: ") == 0) {
         state = FUNC_AT;
+      }
+      else if (std::regex_match(line, match, regex_line)) {
+        // Expect '  %u:'
+        linenumber = strtoul(match[1].str().c_str(), nullptr, 10);
+        bb->lines.emplace(linenumber, Line());
+
+        // No state change
+        continue;
       }
       else if (line.length() == 0) {
         break;
@@ -235,48 +213,6 @@ bool loadBasicBlockInfo(std::vector<Function> &list, std::string filename) {
         state = BLOCK;
 
         break;
-      case BLOCK:
-        // Expect '  size: <IR count>'
-        if (line.compare(0, 8, "  size: ") != 0) {
-          return false;
-        }
-
-        state = BLOCK_SIZE;
-
-        break;
-      case BLOCK_SIZE:
-        // Expect '  from: [filename:line]'
-        if (line.compare(0, 8, "  from: ") != 0) {
-          return false;
-        }
-
-        // Store source info
-        bb->begin = parseFile(line, bb->from, 8);
-
-        state = BLOCK_FROM;
-
-        break;
-      case BLOCK_FROM:
-        // Expect '  to: [filename:line]'
-        if (line.compare(0, 6, "  to: ") != 0) {
-          return false;
-        }
-
-        // Store source info
-        bb->end = parseFile(line, bb->to, 6);
-
-        state = BLOCK_TO;
-
-        // Check source info
-        if (bb->from.length() == 0 || bb->to.length() == 0) {
-          bb->skip = true;
-        }
-        else if (bb->from.compare(current->file) != 0 ||
-                 bb->to.compare(current->file) != 0) {
-          bb->skip = true;
-        }
-
-        break;
       default:
         return false;
     }
@@ -303,15 +239,10 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
   std::string line;
   bool inFunction = false;
   Assembly::Function *current = nullptr;
-  Assembly::BasicBlock *bb = nullptr;
 
   std::regex regex_loc(
       "\\s+\\.loc\\s+\\d+\\s+\\d+\\s+\\d+.+[#@] (.+):(\\d+):\\d+",
       std::regex::ECMAScript | std::regex::icase);
-  std::regex regex_bb("[#@] %bb\\.(\\d+):(\\s+[#@] %(.+))?",
-                      std::regex::ECMAScript | std::regex::icase);
-  std::regex regex_label_bb("\\.LBB(\\d+)(_\\d+)*:\\s+[#@] %(.+)",
-                            std::regex::ECMAScript | std::regex::icase);
   std::regex regex_inst("\\s+([^\\s\\.#@][\\w\\d\\.]*)\\s+.+");
   std::regex regex_func("[#@] -- Begin function (.+)");
   std::regex regex_end("[#@] -- End function");
@@ -319,6 +250,9 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
                        std::regex::ECMAScript | std::regex::icase);
 
   std::smatch match;
+
+  bool lineValid = false;
+  std::map<uint32_t, Assembly::Line>::iterator currentLine;
 
   while (!file.eof()) {
     std::getline(file, line);
@@ -328,55 +262,30 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
         auto &name = match[1];
         uint32_t row = strtoul(match[2].str().c_str(), nullptr, 10);
 
-        if (bb == nullptr) {
+        if (current->at == 0) {
           current->file = std::move(name);
           current->at = row;
         }
         else {
           // Ignore file name if different with function file and line 0
           if (current->file.compare(name.str()) == 0 && row != 0) {
-            // Store min value to begin
-            if (bb->begin > row) {
-              bb->begin = row;
-            }
+            auto ret = current->lines.emplace(row, Assembly::Line());
 
-            // Store max value to end
-            if (bb->end < row) {
-              bb->end = row;
-            }
+            currentLine = ret.first;
+            lineValid = true;
+          }
+          else {
+            lineValid = false;
           }
         }
-      }
-      else if (std::regex_match(line, match, regex_bb)) {
-        uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
-
-        // Append to list
-        current->blocks.emplace_back(Assembly::BasicBlock());
-        bb = &current->blocks.back();
-
-        // Store name and id
-        if (match.length() > 3) {
-          auto &name = match[3];
-          bb->name = std::move(name);
-        }
-
-        bb->id = id;
-      }
-      else if (std::regex_match(line, match, regex_label_bb)) {
-        uint32_t id = strtoul(match[1].str().c_str(), nullptr, 10);
-        auto &name = match[3];
-
-        // Append to list
-        current->blocks.emplace_back(Assembly::BasicBlock());
-        bb = &current->blocks.back();
-
-        // Store name and id
-        bb->name = std::move(name);
-        bb->id = id;
       }
       else if (std::regex_match(line, match, regex_inst)) {
         if (isa == nullptr) {
           return false;
+        }
+
+        if (!lineValid) {
+          continue;
         }
 
         auto op = match[1].str();
@@ -388,22 +297,22 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
 
         switch (type) {
           case Instruction::Type::Branch:
-            where = &bb->branch;
+            where = &currentLine->second.branch;
             break;
           case Instruction::Type::Load:
-            where = &bb->load;
+            where = &currentLine->second.load;
             break;
           case Instruction::Type::Store:
-            where = &bb->store;
+            where = &currentLine->second.store;
             break;
           case Instruction::Type::Arithmetic:
-            where = &bb->arithmetic;
+            where = &currentLine->second.arithmetic;
             break;
           case Instruction::Type::FloatingPoint:
-            where = &bb->floatingPoint;
+            where = &currentLine->second.floatingPoint;
             break;
           case Instruction::Type::Other:
-            where = &bb->otherInsts;
+            where = &currentLine->second.otherInsts;
             break;
           default:
             break;
@@ -411,22 +320,14 @@ bool parseAssembly(std::vector<Assembly::Function> &list, std::string filename,
 
         if (where) {
           (*where)++;
-          bb->cycles += cycle;
+          currentLine->second.cycles += cycle;
         }
       }
       else if (std::regex_search(line, match, regex_end)) {
         inFunction = false;
 
-        // Fill line info of entry block
-        if (current->blocks.front().begin > current->at) {
-          current->blocks.front().begin = current->at;
-        }
-        if (current->blocks.front().end == 0) {
-          current->blocks.front().end = current->at;
-        }
-
         current = nullptr;
-        bb = nullptr;
+        lineValid = false;
       }
     }
     else {
@@ -479,54 +380,33 @@ bool generateStatistic(std::vector<Function> &bbinfo,
 #endif
         // Matching basicblocks
         for (auto &irbb : irfunc.blocks) {
-          // Invalid source info
-          if (irbb.skip) {
-            continue;
-          }
+          uint32_t notfound = 0;
 
-          // Exclude exception handler
-          if (irbb.name.compare(0, 2, "eh") == 0) {
-            irbb.skip = true;
+          // Fill each lines with line statistics
+          for (auto &irline : irbb.lines) {
+            auto asmline = asmfunc.lines.find(irline.first);
 
-            continue;
-          }
+            if (asmline != asmfunc.lines.end() && asmline->second.cycles > 0) {
+              // Addup stats
+              irline.second.branch += asmline->second.branch;
+              irline.second.load += asmline->second.load;
+              irline.second.store += asmline->second.store;
+              irline.second.arithmetic += asmline->second.arithmetic;
+              irline.second.floatingPoint += asmline->second.floatingPoint;
+              irline.second.otherInsts += asmline->second.otherInsts;
+              irline.second.cycles += asmline->second.cycles;
 
-          // Exclude cleanup
-          if (irbb.name.compare(0, 7, "cleanup") == 0) {
-            irbb.skip = true;
-
-            continue;
-          }
-
-          // We have at least one basic block (entry) -- not checking end()
-          for (auto &asmbb : asmfunc.blocks) {
-            // Find basic block (by name)
-            if (irbb.name.compare(asmbb.name) == 0) {
-              // Exact same size
-              if (irbb.begin == asmbb.begin && asmbb.end == irbb.end) {
-                assignBlock(irbb, asmbb);
-              }
-              // irbb > asmbb
-              else if (irbb.begin <= asmbb.begin && asmbb.end <= irbb.end) {
-                addBlock(irbb, asmbb);
-              }
-              // asmbb > irbb or intersect
-              else {
-                irbb.skip = true;
-
-                // TODO: HANDLE THIS CASE!
-#ifdef DEBUG_MODE
-                std::cerr << "Cannot assign statistics: " << irfunc.name
-                          << std::endl;
-                std::cerr << " BasicBlock: " << irbb.name << " <- "
-                          << asmbb.name << std::endl;
-                std::cerr << "  IR: " << irbb.name << " (" << irbb.begin << ":"
-                          << irbb.end << ")" << std::endl;
-                std::cerr << "  ASM: " << asmbb.name << " (" << asmbb.begin
-                          << ":" << asmbb.end << ")" << std::endl;
-#endif
-              }
+              // Mark cycles as zero
+              asmline->second.cycles = 0;
             }
+            else {
+              notfound++;
+            }
+          }
+
+          if (notfound == irbb.lines.size()) {
+            // This block is empty
+            irbb.lines.clear();
           }
         }
 
@@ -557,21 +437,26 @@ bool saveStatistic(std::vector<Function> &list, std::string filename) {
     file << " at: " << func.file << ":" << func.at << std::endl;
 
     for (auto &block : func.blocks) {
-      if (block.skip) {
+      if (block.lines.size() == 0) {
         continue;
       }
 
       file << " block: " << block.name << std::endl;
-      file << "  from: " << block.from << ":" << block.begin << std::endl;
-      file << "  to: " << block.to << ":" << block.end << std::endl;
-      file << "  stat: ";
-      file << block.branch << ", ";
-      file << block.load << ", ";
-      file << block.store << ", ";
-      file << block.arithmetic << ", ";
-      file << block.floatingPoint << ", ";
-      file << block.otherInsts << ", ";
-      file << block.cycles << std::endl;
+
+      for (auto &line : block.lines) {
+        if (line.second.cycles == 0) {
+          continue;
+        }
+
+        file << "  " << line.first << ": ";
+        file << line.second.branch << ", ";
+        file << line.second.load << ", ";
+        file << line.second.store << ", ";
+        file << line.second.arithmetic << ", ";
+        file << line.second.floatingPoint << ", ";
+        file << line.second.otherInsts << ", ";
+        file << line.second.cycles << std::endl;
+      }
     }
   }
 
@@ -610,19 +495,19 @@ int main(int argc, char *argv[]) {
   std::vector<Assembly::Function> asmfunclist;
 
   if (!loadBasicBlockInfo(funclist, bbinfo)) {
-    return 1;
+    return 2;
   }
 
   if (!parseAssembly(asmfunclist, asmfile, nullptr)) {
-    return 1;
+    return 3;
   }
 
   if (!generateStatistic(funclist, asmfunclist)) {
-    return 1;
+    return 4;
   }
 
   if (!saveStatistic(funclist, inststat)) {
-    return 1;
+    return 5;
   }
 
   return 0;
