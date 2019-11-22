@@ -7,6 +7,7 @@
 
 #include "src/instruction_applier.hh"
 
+#include <regex>
 #include <string>
 
 #include "llvm/ADT/Statistic.h"
@@ -100,22 +101,18 @@ void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
 
 void InstructionApplier::parseStatFile() {
   // State machine
-  // func -> at -> block -> from -> to -> stat
-  //   |             `----------------------|
-  //   `------------------------------------'
+  // func -> at -> block -> number:
+  //   |             `--------|
+  //   `----------------------'
 
   std::string line;
   enum STATE {
-    IDLE,        // -> FUNC/terminate
-    FUNC,        // -> FUNC_AT
-    FUNC_AT,     // -> BLOCK
-    BLOCK,       // -> BLOCK_FROM
-    BLOCK_FROM,  // -> BLOCK_TO
-    BLOCK_TO,    // -> BLOCK_STAT
-    BLOCK_STAT,  // -> IDLE/FUNC
+    IDLE,     // -> FUNC/terminate
+    FUNC,     // -> FUNC_AT
+    FUNC_AT,  // -> BLOCK
+    BLOCK,    // -> IDLE/FUNC_AT/BLOCK
   } state = IDLE;
   FuncStat *current = nullptr;
-  BlockStat *bb = nullptr;
 
   auto parseFile = [](std::string &line, std::string &file,
                       size_t from) -> uint32_t {
@@ -131,16 +128,44 @@ void InstructionApplier::parseStatFile() {
     }
   };
 
+  std::smatch match;
+  std::regex regex_line(
+      "  (\\d+): (\\d+), (\\d+), (\\d+), (\\d+), (\\d+), (\\d+), (\\d+)");
+
+  uint32_t linenumber;
+
   while (!infile.eof()) {
     // Read one line
     std::getline(infile, line);
 
-    if (state == BLOCK_STAT) {
+    if (state == BLOCK) {
       if (line.compare(0, 6, "func: ") == 0) {
         state = IDLE;
       }
       else if (line.compare(0, 8, " block: ") == 0) {
         state = FUNC_AT;
+      }
+      else if (std::regex_match(line, match, regex_line)) {
+        // Expect '  %u:'
+        linenumber = strtoul(match[1].str().c_str(), nullptr, 10);
+
+        auto ret = current->lines.emplace(linenumber, LineStat());
+
+        ret.first->second.branch +=
+            strtoul(match[2].str().c_str(), nullptr, 10);
+        ret.first->second.load += strtoul(match[3].str().c_str(), nullptr, 10);
+        ret.first->second.store += strtoul(match[4].str().c_str(), nullptr, 10);
+        ret.first->second.arithmetic +=
+            strtoul(match[5].str().c_str(), nullptr, 10);
+        ret.first->second.floatingPoint +=
+            strtoul(match[6].str().c_str(), nullptr, 10);
+        ret.first->second.otherInsts +=
+            strtoul(match[7].str().c_str(), nullptr, 10);
+        ret.first->second.cycles +=
+            strtoul(match[8].str().c_str(), nullptr, 10);
+
+        // No state change
+        continue;
       }
       else if (line.length() == 0) {
         break;
@@ -188,79 +213,9 @@ void InstructionApplier::parseStatFile() {
           return;
         }
 
-        // Create basicblock entry
-        current->blocks.emplace_back(BlockStat());
-        bb = &current->blocks.back();
-        bb->applied = false;
-
-        // Store basicblock name
-        bb->name = std::move(line.substr(8));
-
-#ifdef DEBUG_MODE
-        outs() << " BasicBlock: " << bb->name << "\n";
-#endif
-
         state = BLOCK;
 
         break;
-      case BLOCK:
-        // Expect '  from: [filename:line]'
-        if (line.compare(0, 8, "  from: ") != 0) {
-          return;
-        }
-
-        // Store source info
-        bb->begin = parseFile(line, bb->from, 8);
-
-        state = BLOCK_FROM;
-
-        break;
-      case BLOCK_FROM:
-        // Expect '  to: [filename:line]'
-        if (line.compare(0, 6, "  to: ") != 0) {
-          return;
-        }
-
-        // Store source info
-        bb->end = parseFile(line, bb->to, 6);
-
-        state = BLOCK_TO;
-
-        break;
-      case BLOCK_TO: {
-        // Expect '  stat: <stat>'
-        if (line.compare(0, 8, "  stat: ") != 0) {
-          return;
-        }
-
-        // Parse stat
-        char *str = (char *)line.c_str() + 8;
-        char *last = nullptr;
-
-        bb->branch = strtoul(str, &last, 10);
-        str = last + 1;
-        bb->load = strtoul(str, &last, 10);
-        str = last + 1;
-        bb->store = strtoul(str, &last, 10);
-        str = last + 1;
-        bb->arithmetic = strtoul(str, &last, 10);
-        str = last + 1;
-        bb->floatingPoint = strtoul(str, &last, 10);
-        str = last + 1;
-        bb->otherInsts = strtoul(str, &last, 10);
-        str = last + 1;
-        bb->cycles = strtoul(str, nullptr, 10);
-
-#ifdef DEBUG_MODE
-        outs() << "  Stat: " << bb->branch << ", " << bb->load << ", "
-               << bb->store << ", " << bb->arithmetic << ", "
-               << bb->floatingPoint << ", " << bb->otherInsts << ", "
-               << bb->cycles << ", "
-               << "\n";
-#endif
-
-        state = BLOCK_STAT;
-      } break;
       default:
         return;
     }
@@ -318,13 +273,10 @@ bool InstructionApplier::runOnFunction(Function &func) {
     outs() << fstat->getName() << ".\n";
 #endif
 
-    std::string from;
-    std::string to;
-    uint32_t begin;
-    uint32_t end;
-
-    uint64_t handled = 0;
-    uint64_t total = 0;
+    std::string ffile;
+    std::string file;
+    uint32_t fline = 0;
+    uint32_t line;
 
     // Find function
     auto iter = funclist.begin();
@@ -340,9 +292,6 @@ bool InstructionApplier::runOnFunction(Function &func) {
       // (u)int64_t is different in 32bit ((unsigned) long long) and 64bit
       // ((unsigned) long), introducing different C++ mangled name.
       // Just match with file name and line number.
-      std::string ffile;
-      uint32_t fline;
-
       fline = getLineInfo(func, ffile);
 
       if (fline > 0) {
@@ -355,68 +304,87 @@ bool InstructionApplier::runOnFunction(Function &func) {
     }
 
     if (iter != funclist.end()) {
+      auto &funcstat = *iter;
+
       // Setup pointers of fstat
       makePointers(next, fstat);
 
-      // Apply instruction stats
+      // Log result if possible
+      if (resultfile.is_open()) {
+        resultfile << "Function: " << func.getName().data() << std::endl;
+
+        // Only print when file info is valid
+        if (fline > 0) {
+          resultfile << " at: " << ffile << ":" << fline << std::endl;
+        }
+      }
+
+      // Apply instruction stats ...
       for (auto &block : func) {
+        // Total stat of current basic block
+        LineStat sum;
+
+        // Where we need to insert stats
         auto &last = block.back();
 
-        total++;
+        // ... from each lines
+        for (auto &inst : block) {
+          // Get line info
+          line = getLineInfo(inst, file);
 
-        // Get line info
-        begin = getFirstLine(block, from);
-        end = getLastLine(block, to);
+          if (line > 0 && ffile.compare(file) == 0) {
+            // Find line from database
+            auto stat = funcstat.lines.find(line);
 
-        // Find block
-        auto stat = iter->blocks.begin();
+            if (stat != funcstat.lines.end() && stat->second.cycles > 0) {
+              // Sum stat value to sum
+              sum.branch += stat->second.branch;
+              sum.load += stat->second.load;
+              sum.store += stat->second.store;
+              sum.arithmetic += stat->second.arithmetic;
+              sum.floatingPoint += stat->second.floatingPoint;
+              sum.otherInsts += stat->second.otherInsts;
+              sum.cycles += stat->second.cycles;
 
-        for (; stat != iter->blocks.end(); ++stat) {
-          if (stat->begin <= begin && end <= stat->end) {
-            break;
+              // Make cycles = 0
+              stat->second.cycles = 0;
+            }
           }
         }
 
-        if (stat == iter->blocks.end()) {
-          // Suppress warning if current block is very small
-          if (end - begin > 2) {
-            errs() << "Function: ";
-            printFunctionName(errs(), func);
-            errs() << "\n BasicBlock: " << block.getName() << " (" << begin
-                   << ":" << end
-                   << ") is not found in instruction statistic file.\n";
-          }
-
+        if (sum.cycles == 0) {
           continue;
         }
 
-        if (stat->applied) {
-          continue;
+        // Log result if possible
+        if (resultfile.is_open()) {
+          resultfile << " BasicBlock: " << block.getName().data() << std::endl;
+          resultfile << "  Stat: " << sum.branch << ", " << sum.load << ", "
+                     << sum.store << ", " << sum.arithmetic << ", "
+                     << sum.floatingPoint << ", " << sum.otherInsts << ", "
+                     << sum.cycles << std::endl;
         }
 
-        handled++;
-        stat->applied = true;
-
-        if (stat->branch > 0) {
-          makeAdd(&last, pointers.branch, stat->branch);
+        if (sum.branch > 0) {
+          makeAdd(&last, pointers.branch, sum.branch);
         }
-        if (stat->load > 0) {
-          makeAdd(&last, pointers.load, stat->load);
+        if (sum.load > 0) {
+          makeAdd(&last, pointers.load, sum.load);
         }
-        if (stat->store > 0) {
-          makeAdd(&last, pointers.store, stat->store);
+        if (sum.store > 0) {
+          makeAdd(&last, pointers.store, sum.store);
         }
-        if (stat->arithmetic > 0) {
-          makeAdd(&last, pointers.arithmetic, stat->arithmetic);
+        if (sum.arithmetic > 0) {
+          makeAdd(&last, pointers.arithmetic, sum.arithmetic);
         }
-        if (stat->floatingPoint > 0) {
-          makeAdd(&last, pointers.floating, stat->floatingPoint);
+        if (sum.floatingPoint > 0) {
+          makeAdd(&last, pointers.floating, sum.floatingPoint);
         }
-        if (stat->otherInsts > 0) {
-          makeAdd(&last, pointers.other, stat->otherInsts);
+        if (sum.otherInsts > 0) {
+          makeAdd(&last, pointers.other, sum.otherInsts);
         }
-        if (stat->cycles > 0) {
-          makeAdd(&last, pointers.cycles, stat->cycles);
+        if (sum.cycles > 0) {
+          makeAdd(&last, pointers.cycles, sum.cycles);
         }
       }
 
@@ -424,18 +392,13 @@ bool InstructionApplier::runOnFunction(Function &func) {
       if (verifyFunction(func, &errs())) {
         func.dump();
       }
-
-      // Log result if possible
-      if (resultfile.is_open()) {
-        resultfile << "Function: " << func.getName().data() << std::endl;
-        resultfile << " Total basic blocks: " << total << std::endl;
-        resultfile << " Handled basic blocks: " << handled << std::endl;
-      }
     }
     else {
+#ifdef DEBUG_MODE
       errs() << "Function: ";
       printFunctionName(errs(), func);
       errs() << " is not found in instruction statistic file.\n";
+#endif
     }
 
     return true;

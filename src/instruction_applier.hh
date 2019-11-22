@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "llvm/Pass.h"
@@ -19,16 +20,7 @@
 
 namespace SimpleSSD::LLVM {
 
-struct BlockStat {
-  std::string name;
-
-  std::string from;
-  std::string to;
-  uint32_t begin;
-  uint32_t end;
-
-  bool applied;
-
+struct LineStat {
   // Instruction count
   uint64_t branch;
   uint64_t load;
@@ -39,6 +31,15 @@ struct BlockStat {
 
   // Cycle consumed
   uint64_t cycles;
+
+  LineStat()
+      : branch(0),
+        load(0),
+        store(0),
+        arithmetic(0),
+        floatingPoint(0),
+        otherInsts(0),
+        cycles(0) {}
 };
 
 struct FuncStat {
@@ -46,7 +47,7 @@ struct FuncStat {
   std::string file;
   uint32_t at;
 
-  std::vector<BlockStat> blocks;
+  std::unordered_map<uint32_t, LineStat> lines;
 };
 
 /**
