@@ -42,11 +42,18 @@ struct LineStat {
         cycles(0) {}
 };
 
+struct BlockStat {
+  std::string name;
+
+  std::vector<uint32_t> lines;
+};
+
 struct FuncStat {
   std::string name;
   std::string file;
   uint32_t at;
 
+  std::vector<BlockStat> blocks;
   std::unordered_map<uint32_t, LineStat> lines;
 };
 

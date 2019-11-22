@@ -113,6 +113,7 @@ void InstructionApplier::parseStatFile() {
     BLOCK,    // -> IDLE/FUNC_AT/BLOCK
   } state = IDLE;
   FuncStat *current = nullptr;
+  BlockStat *bb = nullptr;
 
   auto parseFile = [](std::string &line, std::string &file,
                       size_t from) -> uint32_t {
@@ -164,6 +165,11 @@ void InstructionApplier::parseStatFile() {
         ret.first->second.cycles +=
             strtoul(match[8].str().c_str(), nullptr, 10);
 
+        // Link to BB
+        if (bb) {
+          bb->lines.emplace_back(linenumber);
+        }
+
         // No state change
         continue;
       }
@@ -212,6 +218,17 @@ void InstructionApplier::parseStatFile() {
         if (line.compare(0, 8, " block: ") != 0) {
           return;
         }
+
+        // Create basicblock entry
+        current->blocks.emplace_back(BlockStat());
+        bb = &current->blocks.back();
+
+        // Store basicblock name
+        bb->name = std::move(line.substr(8));
+
+#ifdef DEBUG_MODE
+        outs() << " BasicBlock: " << bb->name << "\n";
+#endif
 
         state = BLOCK;
 
@@ -346,14 +363,52 @@ bool InstructionApplier::runOnFunction(Function &func) {
               sum.otherInsts += stat->second.otherInsts;
               sum.cycles += stat->second.cycles;
 
-              // Make cycles = 0
               stat->second.cycles = 0;
             }
           }
         }
 
         if (sum.cycles == 0) {
-          continue;
+          // Current block does not have line information, use old method
+          uint32_t begin = getFirstLine(block, file);
+          uint32_t end = getLastLine(block, file);
+
+          for (auto &bbstat : funcstat.blocks) {
+            if (bbstat.lines.size() == 0) {
+              continue;
+            }
+
+            // Sort lines
+            std::sort(bbstat.lines.begin(), bbstat.lines.end());
+
+            // Match
+            if (bbstat.lines.front() <= begin && end <= bbstat.lines.back()) {
+              for (auto &bbline : bbstat.lines) {
+                auto bblinestat = funcstat.lines.find(bbline);
+
+                if (bblinestat != funcstat.lines.end() &&
+                    bblinestat->second.cycles > 0) {
+                  // Sum stat value to sum
+                  sum.branch += bblinestat->second.branch;
+                  sum.load += bblinestat->second.load;
+                  sum.store += bblinestat->second.store;
+                  sum.arithmetic += bblinestat->second.arithmetic;
+                  sum.floatingPoint += bblinestat->second.floatingPoint;
+                  sum.otherInsts += bblinestat->second.otherInsts;
+                  sum.cycles += bblinestat->second.cycles;
+
+                  bblinestat->second.cycles = 0;
+                }
+              }
+
+              break;
+            }
+          }
+
+          if (sum.cycles == 0) {
+            // Giving up
+            continue;
+          }
         }
 
         // Log result if possible
