@@ -380,8 +380,6 @@ bool generateStatistic(std::vector<Function> &bbinfo,
 #endif
         // Matching basicblocks
         for (auto &irbb : irfunc.blocks) {
-          uint32_t notfound = 0;
-
           // Fill each lines with line statistics
           for (auto &irline : irbb.lines) {
             auto asmline = asmfunc.lines.find(irline.first);
@@ -395,18 +393,7 @@ bool generateStatistic(std::vector<Function> &bbinfo,
               irline.second.floatingPoint += asmline->second.floatingPoint;
               irline.second.otherInsts += asmline->second.otherInsts;
               irline.second.cycles += asmline->second.cycles;
-
-              // Mark cycles as zero
-              asmline->second.cycles = 0;
             }
-            else {
-              notfound++;
-            }
-          }
-
-          if (notfound == irbb.lines.size()) {
-            // This block is empty
-            irbb.lines.clear();
           }
         }
 
