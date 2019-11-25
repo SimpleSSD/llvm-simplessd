@@ -374,7 +374,7 @@ bool generateStatistic(std::vector<Function> &bbinfo,
   for (auto &irfunc : bbinfo) {
     for (auto &asmfunc : asmbbinfo) {
       // Find function
-      if (irfunc.name.compare(asmfunc.name) == 0 && irfunc.at == asmfunc.at) {
+      if (irfunc.name.compare(asmfunc.name) == 0 || irfunc.at == asmfunc.at) {
 #ifdef DEBUG_MODE
         std::cout << "Function: " << irfunc.name << std::endl;
 #endif
