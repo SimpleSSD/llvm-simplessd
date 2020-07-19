@@ -23,19 +23,6 @@ include_directories(
 
 add_definitions(${LLVM_DEFINITIONS})
 
-add_compile_options(-g)
-add_compile_options(-Wall)
-add_compile_options(-Wextra)
-add_compile_options(-Werror)
-add_compile_options(-fno-rtti)
-
-if (DEBUG_BUILD)
-  add_compile_options(-O0)
-  add_definitions(-DDEBUG_MODE)
-else ()
-  add_compile_options(-O2)
-endif ()
-
 set(SRC_BLOCK_COLLECTOR
   ./src/basic_block_collector.cc
 )
@@ -64,5 +51,18 @@ add_library(llvm-simplessd
 add_executable(inststat-generator
   ${SRC_STAT_GENERATOR}
 )
+
+target_compile_options(llvm-simplessd PRIVATE -g -fno-rtti)
+target_compile_options(inststat-generator PRIVATE -g)
+
+if (DEBUG_BUILD)
+  target_compile_options(llvm-simplessd PRIVATE -O0)
+  target_compile_options(inststat-generator PRIVATE -O0)
+  target_compile_definitions(llvm-simplessd PRIVATE -DDEBUG_MODE)
+  target_compile_definitions(inststat-generator PRIVATE -DDEBUG_MODE)
+else ()
+  target_compile_options(llvm-simplessd PRIVATE -O2)
+  target_compile_options(inststat-generator PRIVATE -O2)
+endif ()
 
 add_dependencies(llvm-simplessd inststat-generator)
