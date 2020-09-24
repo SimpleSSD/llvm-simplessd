@@ -8,8 +8,18 @@
 cmake_minimum_required(VERSION 3.10)
 project(llvm-simplessd)
 
-# LLVM Pass debug mode
-option(DEBUG_BUILD "Build LLVM Passes in debug mode." OFF)
+# Validate build type
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Select CMake build type." FORCE)
+
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
+endif ()
+
+string (TOUPPER "${CMAKE_BUILD_TYPE}" uppercase_CMAKE_BUILD_TYPE)
+
+if (CMAKE_BUILD_TYPE AND NOT uppercase_CMAKE_BUILD_TYPE MATCHES "^(DEBUG|RELEASE)$")
+  message (FATAL_ERROR "Invalid value for CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+endif ()
 
 # We requires LLVM library
 find_package(LLVM REQUIRED CONFIG)
@@ -20,8 +30,6 @@ include_directories(
   ${LLVM_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}
 )
-
-add_definitions(${LLVM_DEFINITIONS})
 
 set(SRC_BLOCK_COLLECTOR
   ./src/basic_block_collector.cc
@@ -51,6 +59,9 @@ add_library(llvm-simplessd
 add_executable(inststat-generator
   ${SRC_STAT_GENERATOR}
 )
+
+target_compile_definitions(llvm-simplessd PRIVATE ${LLVM_DEFINITIONS})
+target_compile_definitions(inststat-generator PRIVATE ${LLVM_DEFINITIONS})
 
 target_compile_options(llvm-simplessd PRIVATE -g -fno-rtti)
 target_compile_options(inststat-generator PRIVATE -g)
