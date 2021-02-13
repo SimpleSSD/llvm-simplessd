@@ -67,13 +67,8 @@ target_compile_options(llvm-simplessd PRIVATE -g -fno-rtti)
 target_compile_options(inststat-generator PRIVATE -g)
 
 if (DEBUG_BUILD)
-  target_compile_options(llvm-simplessd PRIVATE -O0)
-  target_compile_options(inststat-generator PRIVATE -O0)
   target_compile_definitions(llvm-simplessd PRIVATE -DDEBUG_MODE)
   target_compile_definitions(inststat-generator PRIVATE -DDEBUG_MODE)
-else ()
-  target_compile_options(llvm-simplessd PRIVATE -O2)
-  target_compile_options(inststat-generator PRIVATE -O2)
 endif ()
 
 add_dependencies(llvm-simplessd inststat-generator)
