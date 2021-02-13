@@ -89,14 +89,22 @@ void InstructionApplier::makeAdd(llvm::Instruction *next, Value *target,
 
   // Load
   auto load = builder.CreateLoad(target);
+#if LLVM_VERSION_MAJOR >= 10
+  load->setAlignment(Align(8));
+#else
   load->setAlignment(8);
+#endif
 
   // Add
   auto add = builder.CreateAdd(builder.getInt64(value), load);
 
   // Store
   auto store = builder.CreateStore(add, target);
+#if LLVM_VERSION_MAJOR >= 10
+  store->setAlignment(Align(8));
+#else
   store->setAlignment(8);
+#endif
 }
 
 void InstructionApplier::parseStatFile() {
